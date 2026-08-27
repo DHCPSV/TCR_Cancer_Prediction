@@ -1,4 +1,4 @@
-subject_id,legacy_patient_id,chain,cohort,label,role,embedding_file,tcr_count,embedding_dim,representation_method,representation_version,sha256
+subject_id,source_patient_id,chain,cohort,label,role,embedding_file,tcr_count,embedding_dim,representation_method,representation_version,sha256
 LTX0001,LTX0001_positive_alpha,alpha,tx100_cancer,1,internal,artifacts/representations/internal/alpha/aa_property/LTX0001.pt,5989,14,aa_property,aa_property-6e46f7f62980f251-reverse-minmax-mean-v1,8cbeabc65068ec5ea0f9ad61e79b2d09b840841d015f14294b3699564ef6be69
 LTX0001,LTX0001_positive_alpha,alpha,tx100_cancer,1,internal,artifacts/representations/internal/alpha/atchley/LTX0001.pt,5989,5,atchley,atchley-d2adfa7d9b67bf85-reverse-minmax-mean-v1,32bfcc5e93f15ae89361130106949b2b74195b2c44faef1aba8ef68170120ae1
 LTX0001,LTX0001_positive_alpha,alpha,tx100_cancer,1,internal,artifacts/representations/internal/alpha/kidera/LTX0001.pt,5989,10,kidera,kidera-9983f8a85704870d-reverse-minmax-mean-v1,1b625a8d78d02727dbaed3c4cbccf7de811040324c205c058b32ede7750426d8

@@ -1,3 +1,12 @@
+"""Pinned SCEPTR 1.2 adapter used for large repertoire embedding.
+
+SCEPTR's public factory and batch-size setter are used by the caller.  This
+module accesses the model's tokeniser and BERT internals only to avoid the
+large intermediate Python objects created by the public dataframe path.  A
+small alpha/beta fixture in the test suite compares this adapter with the
+public ``calc_vector_representations`` method.
+"""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -25,7 +34,6 @@ VALID_AMINO_ACIDS = {
 def calc_vector_representations(instances: pd.DataFrame, model) -> torch.Tensor:
     normalised = normalise(instances)
     validate(normalised)
-    validate_tokens(normalised.head(64), model)
     representations = []
     model._bert.eval()
     with torch.no_grad():

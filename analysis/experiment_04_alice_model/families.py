@@ -10,33 +10,26 @@ import pandas as pd
 import torch
 
 from analysis import protocol, reporting
-from analysis.experiment_04_alice_model.core import (
-    CHECKPOINTS,
-    EXPERIMENT_ID,
-    METHODS,
-    OUTPUT as RESULTS,
-    RUN_ARTIFACTS as RUNS,
+from analysis.experiment_04_alice_model import methods, study
+from analysis.experiment_04_alice_model.methods import (
+    HARD_THRESHOLD as ALICE_THRESHOLD,
+    LinearHead,
 )
-from analysis.experiment_04_alice_model.methods import HARD_THRESHOLD as ALICE_THRESHOLD, LinearHead
-from analysis.experiment_04_alice_model import study
 
 
 REFERENCE_METHOD_ID = "alice_l2_linear"
 REFERENCE_NORMALISATION = "l2"
 REFERENCE_SEED_ID = "S01"
 REFERENCE_SEED_VALUE = int(protocol.SEED_REGISTRY[REFERENCE_SEED_ID]["value"])
-METHOD = next(method for method in METHODS if method.method_id == REFERENCE_METHOD_ID)
+EXPERIMENT_ID = methods.EXPERIMENT_ID
+METHOD = next(
+    method for method in methods.MAIN_METHODS if method.method_id == REFERENCE_METHOD_ID
+)
 METHOD_ID = METHOD.method_id
 
 
 def checkpoint_metadata(chain: str, seed_id: str, fold: int) -> dict:
-    return study.checkpoint_metadata(
-        study.HARD_GATE_STUDY,
-        METHOD,
-        chain,
-        seed_id,
-        fold,
-    )
+    return study.main_checkpoint_metadata(METHOD, chain, seed_id, fold)
 
 
 def dataset(chain: str) -> pd.DataFrame:
@@ -50,15 +43,15 @@ def dataset(chain: str) -> pd.DataFrame:
     )
 
 
-FAMILY_ARTIFACTS = RUNS / "families"
+FAMILY_ARTIFACTS = methods.RUN_ARTIFACTS / "families"
 FAMILY_RANKS = FAMILY_ARTIFACTS / "ranked"
-ALICE = protocol.REPO / "artifacts" / "alice"
+ALICE = methods.ALICE
 
 
 def fold_heads() -> dict[int, tuple[torch.Tensor, float]]:
     heads: dict[int, tuple[torch.Tensor, float]] = {}
     for fold in range(5):
-        path = CHECKPOINTS / METHOD_ID / "alpha" / REFERENCE_SEED_ID / f"fold_{fold}.pt"
+        path = methods.CHECKPOINTS / METHOD_ID / "alpha" / REFERENCE_SEED_ID / f"fold_{fold}.pt"
         payload = torch.load(path, map_location="cpu", weights_only=True)
         expected = checkpoint_metadata("alpha", REFERENCE_SEED_ID, fold)
         if any(payload.get(key) != value for key, value in expected.items()):
@@ -105,7 +98,7 @@ def sequence_contributions() -> pd.DataFrame:
             pd.DataFrame(
                 {
                     "subject_id": patient.subject_id,
-                    "legacy_patient_id": patient.legacy_patient_id,
+                    "source_patient_id": patient.source_patient_id,
                     "true_label": patient.label,
                     "fold": patient.fold,
                     "sample_index": mapping["sample_index"][selected].astype(int),
@@ -119,7 +112,7 @@ def sequence_contributions() -> pd.DataFrame:
     if not frames:
         raise RuntimeError("No selected internal Alpha clonotypes")
     positions = pd.concat(frames, ignore_index=True)
-    keys = ["subject_id", "legacy_patient_id", "true_label", "fold", "sample_index", "clone_key"]
+    keys = ["subject_id", "source_patient_id", "true_label", "fold", "sample_index", "clone_key"]
     positions = positions.groupby(keys, as_index=False).agg(
         alice_evidence=("alice_evidence", "max"),
         logit_contribution=("logit_contribution", "sum"),
@@ -185,7 +178,7 @@ def connected_components(sequences: list[str]) -> list[int]:
 def build_families(clonotypes: pd.DataFrame) -> pd.DataFrame:
     exact = clonotypes.groupby(
         [
-            "subject_id", "legacy_patient_id", "true_label", "fold", "sample_index",
+            "subject_id", "source_patient_id", "true_label", "fold", "sample_index",
             "sample_id", "cdr3aa", "bestVGene", "bestJGene",
         ],
         as_index=False,
@@ -201,7 +194,7 @@ def build_families(clonotypes: pd.DataFrame) -> pd.DataFrame:
     )
     exact["cdr3_length"] = exact["cdr3aa"].str.len()
     keys = [
-        "subject_id", "legacy_patient_id", "true_label", "fold", "sample_index",
+        "subject_id", "source_patient_id", "true_label", "fold", "sample_index",
         "sample_id", "bestVGene", "bestJGene", "cdr3_length",
     ]
     rows = []
@@ -265,39 +258,6 @@ def report(families: pd.DataFrame | None = None) -> pd.DataFrame:
         families = pd.read_csv(FAMILY_ARTIFACTS / "patient_local_families.csv")
     ranked = rank_families(families)
     protocol.atomic_csv(
-        pd.DataFrame(
-            [
-                {
-                    "ranking_type": "model_contribution",
-                    "reference_method_id": METHOD_ID,
-                    "reference_method_label": METHOD.label,
-                    "chain": "alpha",
-                    "pooling_normalisation": REFERENCE_NORMALISATION,
-                    "alice_evidence_threshold": ALICE_THRESHOLD,
-                    "seed_id": REFERENCE_SEED_ID,
-                    "seed_value": REFERENCE_SEED_VALUE,
-                    "seed_count": 1,
-                    "fold_count": 5,
-                    "ranking_statistic": "held_out_cancer_logit_contribution",
-                },
-                {
-                    "ranking_type": "alice_significance",
-                    "reference_method_id": "not_applicable",
-                    "reference_method_label": "ALICE only",
-                    "chain": "alpha",
-                    "pooling_normalisation": "not_applicable",
-                    "alice_evidence_threshold": ALICE_THRESHOLD,
-                    "seed_id": "not_applicable",
-                    "seed_value": "not_applicable",
-                    "seed_count": 0,
-                    "fold_count": 0,
-                    "ranking_statistic": "minimum_retained_member_q_value",
-                },
-            ]
-        ),
-        RESULTS / "tables" / "family_analysis_manifest.csv",
-    )
-    protocol.atomic_csv(
         ranked.loc[ranked["rank_type"] == "pushes_cancer"],
         FAMILY_RANKS / "top_50_pushes_cancer.csv",
     )
@@ -327,7 +287,7 @@ def report(families: pd.DataFrame | None = None) -> pd.DataFrame:
         ],
         loc="lower right",
     )
-    path = RESULTS / "figures" / "family_contributions.png"
+    path = methods.RESULTS / "figures" / "family_contributions.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(path, dpi=300, bbox_inches="tight", pad_inches=0.08)
     plt.close(figure)

@@ -1,4 +1,4 @@
-split,role,chain,subject_id,legacy_patient_id,label,cohort,evidence_file,sequence_map_file,sample_count,alice_burden,alice_hits,alice_tested_clonotypes,alice_testable,tcr_count,evidence_nonzero_fraction
+split,role,chain,subject_id,source_patient_id,label,cohort,evidence_file,sequence_map_file,sample_count,alice_burden,alice_hits,alice_tested_clonotypes,alice_testable,tcr_count,evidence_nonzero_fraction
 internal,internal,alpha,LTX0001,LTX0001_positive_alpha,1,tx100_cancer,artifacts/alice/evidence/internal/alpha/LTX0001.npy,artifacts/alice/sequence_maps/internal/alpha/LTX0001.npz,1,296.1351848753555,177,5977,1,5989,0.07947904491567874
 internal,internal,alpha,LTX0013,LTX0013_positive_alpha,1,tx100_cancer,artifacts/alice/evidence/internal/alpha/LTX0013.npy,artifacts/alice/sequence_maps/internal/alpha/LTX0013.npz,1,27.83576896311761,4,1437,1,1438,0.009735744089012517
 internal,internal,alpha,LTX0015,LTX0015_positive_alpha,1,tx100_cancer,artifacts/alice/evidence/internal/alpha/LTX0015.npy,artifacts/alice/sequence_maps/internal/alpha/LTX0015.npz,1,506.36574074074076,175,3456,1,3570,0.11092436974789915

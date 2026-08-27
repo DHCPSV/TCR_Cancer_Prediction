@@ -30,8 +30,10 @@ models                humanTRA / humanTRB
 
 ALICE uses the repository's supported Windows environment: CPython 3.12 in
 the root `.venv`, `olga==1.2.4` from `requirements.txt`, and system R 4.3.3
-installed at `C:\Program Files\R\R-4.3.3`. The local Python environment must
-be active and `Rscript` must be on `PATH`.
+installed at `C:\Program Files\R\R-4.3.3`. Activate the local Python
+environment before installing or running the worker. The Experiment 4 runner
+uses `Rscript` from `PATH`, then checks the standard Windows installation; use
+`--rscript` for another location.
 
 The R runtime requires only `data.table`, `stringdist`, `foreach`,
 `doParallel` and `iterators`; the remaining packages listed under `Suggests`
@@ -40,9 +42,11 @@ runtime versions and then the vendored package from the repository root:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
-Rscript -e "install.packages('remotes', repos='https://cloud.r-project.org')"
-Rscript -e "remotes::install_version('data.table', version='1.17.8', repos='https://cloud.r-project.org'); remotes::install_version('stringdist', version='0.9.15', repos='https://cloud.r-project.org'); remotes::install_version('iterators', version='1.0.14', repos='https://cloud.r-project.org'); remotes::install_version('foreach', version='1.5.2', repos='https://cloud.r-project.org'); remotes::install_version('doParallel', version='1.0.17', repos='https://cloud.r-project.org')"
-R CMD INSTALL third_party\alice\tcrgrapher
+$rscript = 'C:\Program Files\R\R-4.3.3\bin\Rscript.exe'
+$r = 'C:\Program Files\R\R-4.3.3\bin\R.exe'
+& $rscript -e "install.packages('remotes', repos='https://cloud.r-project.org')"
+& $rscript -e "remotes::install_version('data.table', version='1.17.8', repos='https://cloud.r-project.org'); remotes::install_version('stringdist', version='0.9.15', repos='https://cloud.r-project.org'); remotes::install_version('iterators', version='1.0.14', repos='https://cloud.r-project.org'); remotes::install_version('foreach', version='1.5.2', repos='https://cloud.r-project.org'); remotes::install_version('doParallel', version='1.0.17', repos='https://cloud.r-project.org')"
+& $r CMD INSTALL third_party\alice\tcrgrapher
 ```
 
 Conda metadata is intentionally not part of the supported project interface.

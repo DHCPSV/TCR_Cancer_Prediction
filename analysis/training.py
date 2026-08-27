@@ -183,6 +183,12 @@ def train_binary_model(
     metric_interval: int = 5,
     history: list[dict] | None = None,
 ) -> torch.nn.Module:
+    """Train with summed patient losses before each optimiser update.
+
+    ``accumulation`` controls how many class-weighted patient losses contribute
+    to one update.  The losses are intentionally summed, not averaged, to
+    preserve the training procedure used by the released checkpoints.
+    """
     weights = class_weights([int(row["label"]) for row in rows])
     optimiser = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = torch.nn.BCEWithLogitsLoss(reduction="none")
@@ -196,7 +202,7 @@ def train_binary_model(
             value = tensors[row["subject_id"]]
             target = torch.tensor([[float(row["label"])]], device=value.device)
             loss = criterion(model(value), target).mean() * weights[int(row["label"])]
-            loss.backward()
+            loss.backward()  # summed with the other patient losses in this update
             if index % accumulation == 0 or index == len(order):
                 optimiser.step()
                 optimiser.zero_grad(set_to_none=True)

@@ -1,4 +1,4 @@
-split,role,chain,subject_id,legacy_patient_id,label,cohort,sample_index,sample_id,sample_key,input_path,output_path,unique_clonotypes,embedding_rows
+split,role,chain,subject_id,source_patient_id,label,cohort,sample_index,sample_id,sample_key,input_path,output_path,unique_clonotypes,embedding_rows
 internal,internal,alpha,LTX0001,LTX0001_positive_alpha,1,tx100_cancer,0,LTX0001_alpha,alpha_LTX0001_5ec259755f23,artifacts/alice/inputs/internal/alpha/alpha_LTX0001_5ec259755f23.tsv.gz,artifacts/alice/outputs/internal/alpha/alpha_LTX0001_5ec259755f23.tsv,5977,5989
 internal,internal,alpha,LTX0013,LTX0013_positive_alpha,1,tx100_cancer,0,LTX0013_alpha,alpha_LTX0013_6c9cf38814d4,artifacts/alice/inputs/internal/alpha/alpha_LTX0013_6c9cf38814d4.tsv.gz,artifacts/alice/outputs/internal/alpha/alpha_LTX0013_6c9cf38814d4.tsv,1437,1438
 internal,internal,alpha,LTX0015,LTX0015_positive_alpha,1,tx100_cancer,0,LTX0015_alpha,alpha_LTX0015_6a7e768bf9df,artifacts/alice/inputs/internal/alpha/alpha_LTX0015_6a7e768bf9df.tsv.gz,artifacts/alice/outputs/internal/alpha/alpha_LTX0015_6a7e768bf9df.tsv,3456,3570

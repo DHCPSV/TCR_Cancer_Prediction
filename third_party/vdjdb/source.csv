@@ -1,2 +1,2 @@
-database,release,download_url,archive_sha256,slim_table_sha256
-VDJdb,2026-05-16,https://github.com/antigenomics/vdjdb-db/releases/download/2026-05-16/vdjdb-2026-05-16.zip,0dce79ec55c109000da10b7bc72300e352ffb7df92d5de30682de20bab35a366,216446cba1b41e0b9f60c6c35c67dc6eb58677e6bd6b4d73e4fb147412e7ff11
+database,release,download_url,archive_sha256,source_table_sha256,derived_table_sha256,derived_rows
+VDJdb,2026-05-16,https://github.com/antigenomics/vdjdb-db/releases/download/2026-05-16/vdjdb-2026-05-16.zip,0dce79ec55c109000da10b7bc72300e352ffb7df92d5de30682de20bab35a366,216446cba1b41e0b9f60c6c35c67dc6eb58677e6bd6b4d73e4fb147412e7ff11,67c80bead916d443ab236a8a4b498e67731eca359565be8a00311c5762fae9b0,5541

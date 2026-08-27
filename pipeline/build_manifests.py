@@ -57,18 +57,17 @@ def sample_record(
     selector_value: str = "",
 ) -> dict:
     if cohort == "internal_control":
-        legacy = raw_file.stem
+        source_id = raw_file.stem
     elif cohort == "tx100_cancer":
-        legacy = f"{subject_id}_positive_{chain}"
+        source_id = f"{subject_id}_positive_{chain}"
     elif cohort == "bcg_control":
-        legacy = re.sub(r"_(alpha|beta)$", "", raw_file.name.removesuffix(".tsv.gz"), flags=re.IGNORECASE)
+        source_id = re.sub(r"_(alpha|beta)$", "", raw_file.name.removesuffix(".tsv.gz"), flags=re.IGNORECASE)
     else:
-        legacy = subject_id
+        source_id = subject_id
     return {
         "sample_id": f"{subject_id}_{chain}",
         "subject_id": subject_id,
-        "legacy_patient_id": legacy,
-        "timepoint": "pooled" if role == "internal" else "external",
+        "source_patient_id": source_id,
         "chain": chain,
         "cohort": cohort,
         "label": label,
@@ -136,10 +135,26 @@ def external_samples() -> pd.DataFrame:
             records.append(
                 sample_record(raw_file, subject_from_name(raw_file, "TCV"), chain, "bcg_control", 0, "external")
             )
-        cancer = sorted((REPO / "data" / "raw" / "external" / "tx421_cancer" / chain).glob("*.tsv.gz"))
+        cancer = sorted(
+            (
+                REPO
+                / "data"
+                / "raw"
+                / "external"
+                / "additional_tracerx_cancer"
+                / chain
+            ).glob("*.tsv.gz")
+        )
         for raw_file in cancer:
             records.append(
-                sample_record(raw_file, subject_from_name(raw_file, "LTX"), chain, "tx421_cancer", 1, "external")
+                sample_record(
+                    raw_file,
+                    subject_from_name(raw_file, "LTX"),
+                    chain,
+                    "additional_tracerx_cancer",
+                    1,
+                    "external",
+                )
             )
     frame = pd.DataFrame(records)
     counts = frame.groupby(["chain", "label"])["subject_id"].nunique().to_dict()
@@ -160,7 +175,7 @@ def bootstrap(role: str) -> None:
     write(incoming, "samples.csv")
 
     representations = incoming.loc[incoming["role"] == role, [
-        "subject_id", "legacy_patient_id", "chain", "cohort", "label", "role"
+        "subject_id", "source_patient_id", "chain", "cohort", "label", "role"
     ]].drop_duplicates().copy()
     representations["embedding_file"] = representations.apply(
         lambda row: f"artifacts/representations/{row.role}/{row.chain}/sceptr/{row.subject_id}.pt", axis=1
@@ -196,19 +211,19 @@ def rebuild_views() -> None:
     if (conflicts > 1).any().any():
         raise RuntimeError("A subject has inconsistent cohort, label or role")
     subjects = samples[identity].drop_duplicates("subject_id").sort_values("subject_id")
-    subject_legacy = (
+    source_ids = (
         samples.assign(
-            subject_legacy_patient_id=samples["legacy_patient_id"].str.replace(
+            source_patient_id_base=samples["source_patient_id"].str.replace(
                 r"_(alpha|beta)$", "", regex=True
             )
         )
-        .groupby("subject_id")["subject_legacy_patient_id"]
+        .groupby("subject_id")["source_patient_id_base"]
         .first()
     )
     subjects.insert(
         1,
-        "legacy_patient_id",
-        subjects["subject_id"].map(subject_legacy),
+        "source_patient_id",
+        subjects["subject_id"].map(source_ids),
     )
     chains = samples.assign(value=True).pivot_table(
         index="subject_id", columns="chain", values="value", aggfunc="any", fill_value=False
@@ -282,7 +297,7 @@ def rebuild_folds() -> None:
                         "seed": SEED,
                         "fold": fold,
                         "subject_id": row.subject_id,
-                        "legacy_patient_id": row.legacy_patient_id,
+                        "source_patient_id": row.source_patient_id,
                         "chain": chain,
                         "label": row.label,
                         "role": "internal",

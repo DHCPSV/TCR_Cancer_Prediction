@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 from pathlib import Path
 
 import numpy as np
@@ -9,7 +8,7 @@ import pandas as pd
 import torch
 
 from analysis import protocol, training
-from analysis.experiment_02_seed_and_attention_normalisation.methods import AttentionMIL
+from analysis.attention_mil import AttentionMIL
 from pipeline import provenance
 
 
@@ -30,17 +29,10 @@ METHOD_LABELS = {
 EPOCHS = 50
 
 RUNS = protocol.REPO / "artifacts" / "runs" / EXPERIMENT_ID
-FROZEN_PREDICTIONS = RUNS / "frozen_inputs" / "predictions"
-GEOMETRY = RUNS / "geometry"
+PCA = RUNS / "pca"
 CHECKPOINTS = protocol.REPO / "artifacts" / "checkpoints" / EXPERIMENT_ID
-PREDECESSORS = (
-    CHECKPOINTS
-    / "frozen_predecessors"
-    / "experiment_02_seed_and_attention_normalisation"
-)
 RESULTS = protocol.REPO / "results" / EXPERIMENT_ID
 MANIFESTS = protocol.REPO / "artifacts" / "manifests"
-INPUT_MANIFEST = MANIFESTS / f"{EXPERIMENT_ID}_inputs.csv"
 MODEL_MANIFEST = MANIFESTS / f"{EXPERIMENT_ID}_models.csv"
 FREEZE = MANIFESTS / f"{EXPERIMENT_ID}_freeze.json"
 
@@ -80,11 +72,7 @@ def predecessor_checkpoint(
     )
 
 
-def frozen_checkpoint(method_id: str, chain: str, seed_id: str, fold: int) -> Path:
-    return PREDECESSORS / method_id / chain / seed_id / f"fold_{fold}.pt"
-
-
-def freeze_predecessor_models() -> list[dict]:
+def predecessor_model_records() -> list[dict]:
     records: list[dict] = []
     for method_id, _, _ in METHODS:
         for chain in CHAINS:
@@ -93,26 +81,18 @@ def freeze_predecessor_models() -> list[dict]:
                     source = predecessor_checkpoint(method_id, chain, seed_id, fold)
                     if not source.exists():
                         raise FileNotFoundError(f"Run Experiment 02 first: {source}")
-                    target = frozen_checkpoint(method_id, chain, seed_id, fold)
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    if (
-                        not target.exists()
-                        or protocol.sha256(target) != protocol.sha256(source)
-                    ):
-                        shutil.copy2(source, target)
                     records.append(
                         {
                             "method_id": method_id,
                             "chain": chain,
                             "seed_id": seed_id,
                             "fold": fold,
-                            "frozen_path": relative(target),
-                            "bytes": target.stat().st_size,
-                            "sha256": protocol.sha256(target),
+                            "checkpoint_path": relative(source),
+                            "bytes": source.stat().st_size,
+                            "sha256": protocol.sha256(source),
                             "source_experiment": (
                                 "experiment_02_seed_and_attention_normalisation"
                             ),
-                            "source_path": relative(source),
                         }
                     )
     return records
@@ -126,9 +106,9 @@ def load_attention_model(
     device: torch.device,
 ) -> AttentionMIL:
     method_id, _, normalizer = method
-    path = frozen_checkpoint(method_id, chain, seed_id, fold)
+    path = predecessor_checkpoint(method_id, chain, seed_id, fold)
     if not path.exists():
-        raise FileNotFoundError(f"Prepare Experiment 03 frozen models first: {path}")
+        raise FileNotFoundError(f"Run Experiment 02 first: {path}")
     payload = torch.load(path, map_location=device, weights_only=True)
     expected = {
         "experiment_id": "experiment_02_seed_and_attention_normalisation",
@@ -158,10 +138,6 @@ def internal_predictions() -> pd.DataFrame:
         raise ValueError("Experiment 02 internal OOF predictions are incomplete")
     frame["experiment_id"] = EXPERIMENT_ID
     result = frame.loc[:, protocol.PREDICTION_COLUMNS]
-    protocol.atomic_csv(
-        result,
-        FROZEN_PREDICTIONS / "baseline_internal_predictions.csv",
-    )
     return result
 
 
@@ -218,10 +194,6 @@ def external_predictions(device: torch.device) -> pd.DataFrame:
         if device.type == "cuda":
             torch.cuda.empty_cache()
     result = pd.DataFrame(output, columns=protocol.PREDICTION_COLUMNS)
-    protocol.atomic_csv(
-        result,
-        FROZEN_PREDICTIONS / "baseline_external_predictions.csv",
-    )
     progress.summary(
         evaluated_seed_configurations=(
             len(METHODS) * len(CHAINS) * len(SEED_IDS)
@@ -233,98 +205,40 @@ def external_predictions(device: torch.device) -> pd.DataFrame:
 def prepare_transfer(
     device: torch.device,
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[dict]]:
-    model_records = freeze_predecessor_models()
+    model_records = predecessor_model_records()
     internal = internal_predictions()
     external = external_predictions(device)
+    protocol.atomic_csv(
+        pd.concat([internal, external], ignore_index=True),
+        RUNS / "transfer_predictions.csv",
+    )
     return internal, external, model_records
 
 
-def input_record(
-    artifact_id: str,
-    path: Path,
-    source_experiment: str,
-    source_path: Path,
-) -> dict:
-    return {
-        "artifact_id": artifact_id,
-        "frozen_path": relative(path),
-        "bytes": path.stat().st_size,
-        "sha256": protocol.sha256(path),
-        "source_experiment": source_experiment,
-        "source_path": relative(source_path),
-    }
-
-
 def write_manifests(model_records: list[dict]) -> None:
-    source_internal = (
-        protocol.REPO
-        / "artifacts/runs/experiment_02_seed_and_attention_normalisation/normalizer_predictions.csv"
-    )
-    records = [
-        input_record(
-            "baseline_internal_predictions",
-            FROZEN_PREDICTIONS / "baseline_internal_predictions.csv",
-            "experiment_02_seed_and_attention_normalisation",
-            source_internal,
-        ),
-        input_record(
-            "baseline_external_predictions",
-            FROZEN_PREDICTIONS / "baseline_external_predictions.csv",
-            EXPERIMENT_ID,
-            FROZEN_PREDICTIONS / "baseline_external_predictions.csv",
-        ),
-    ]
-    protocol.atomic_csv(pd.DataFrame(records), INPUT_MANIFEST)
     protocol.atomic_csv(pd.DataFrame(model_records), MODEL_MANIFEST)
 
 
-def verify_frozen_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
-    inputs = pd.read_csv(INPUT_MANIFEST, dtype=str)
+def verify_predecessor_models() -> pd.DataFrame:
     models = pd.read_csv(MODEL_MANIFEST, dtype=str)
-    required_inputs = {
-        "artifact_id",
-        "frozen_path",
-        "bytes",
-        "sha256",
-        "source_experiment",
-        "source_path",
-    }
     required_models = {
         "method_id",
         "chain",
         "seed_id",
         "fold",
-        "frozen_path",
+        "checkpoint_path",
         "bytes",
         "sha256",
         "source_experiment",
-        "source_path",
     }
-    if missing := required_inputs - set(inputs):
-        raise ValueError(f"Frozen-input manifest lacks {sorted(missing)}")
     if missing := required_models - set(models):
         raise ValueError(f"Frozen-model manifest lacks {sorted(missing)}")
-    expected_artifacts = {
-        "baseline_internal_predictions",
-        "baseline_external_predictions",
-    }
-    if set(inputs["artifact_id"]) != expected_artifacts:
-        raise ValueError(
-            "Frozen-input manifest differs from the transfer/PCA contract: "
-            f"{sorted(set(inputs['artifact_id']))}"
-        )
-    if inputs["artifact_id"].duplicated().any() or models["frozen_path"].duplicated().any():
-        raise ValueError("Frozen predecessor manifests contain duplicates")
-    for row in pd.concat(
-        [
-            inputs[["frozen_path", "bytes", "sha256"]],
-            models[["frozen_path", "bytes", "sha256"]],
-        ],
-        ignore_index=True,
-    ).itertuples(index=False):
-        path = protocol.repo_path(row.frozen_path)
+    if models["checkpoint_path"].duplicated().any():
+        raise ValueError("Predecessor model manifest contains duplicates")
+    for row in models.itertuples(index=False):
+        path = protocol.repo_path(row.checkpoint_path)
         if path.stat().st_size != int(row.bytes) or protocol.sha256(path) != row.sha256:
-            raise ValueError(f"Frozen predecessor changed: {row.frozen_path}")
+            raise ValueError(f"Predecessor checkpoint changed: {row.checkpoint_path}")
 
     expected_count = len(CHAINS) * len(SEED_IDS) * N_FOLDS
     actual_counts = models.groupby("method_id").size().to_dict()
@@ -340,57 +254,19 @@ def verify_frozen_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
             )
     for row in models.itertuples(index=False):
         payload = torch.load(
-            protocol.repo_path(row.frozen_path),
+            protocol.repo_path(row.checkpoint_path),
             map_location="cpu",
             weights_only=True,
         )
         if "model_state" not in payload:
-            raise ValueError(f"Missing model state: {row.frozen_path}")
+            raise ValueError(f"Missing model state: {row.checkpoint_path}")
         if str(payload.get("method_id")) != row.method_id:
-            raise ValueError(f"Method metadata mismatch: {row.frozen_path}")
-    return inputs, models
-
-
-def frozen_artifact(inputs: pd.DataFrame, artifact_id: str) -> Path:
-    row = inputs.loc[inputs["artifact_id"] == artifact_id]
-    if len(row) != 1:
-        raise ValueError(f"Expected one frozen artifact named {artifact_id}")
-    return protocol.repo_path(row.iloc[0]["frozen_path"])
-
-
-def _read_predictions(path: Path) -> pd.DataFrame:
-    frame = pd.read_csv(path, dtype={"seed_value": str})
-    frame = frame.loc[frame["method_id"].isin(TRANSFER_METHODS)].copy()
-    frame["experiment_id"] = EXPERIMENT_ID
-    frame["method_label"] = frame["method_id"].map(METHOD_LABELS)
-    return frame.loc[:, protocol.PREDICTION_COLUMNS]
-
-
-def assemble() -> pd.DataFrame:
-    inputs, _ = verify_frozen_inputs()
-    internal = _read_predictions(
-        frozen_artifact(inputs, "baseline_internal_predictions")
-    )
-    external = _read_predictions(
-        frozen_artifact(inputs, "baseline_external_predictions")
-    )
-    transfer = pd.concat([internal, external], ignore_index=True)
-    if set(transfer["split"]) != {"internal_oof", "locked_external"}:
-        raise ValueError(f"Unexpected transfer splits: {set(transfer['split'])}")
-    for key, part in transfer.groupby(
-        ["method_id", "chain", "seed_id", "split"]
-    ):
-        expected = 169 if key[-1] == "internal_oof" else (
-            109 if key[1] == "alpha" else 110
-        )
-        if len(part) != expected or part["subject_id"].nunique() != expected:
-            raise ValueError(f"Incomplete frozen predictions: {key}")
-    protocol.atomic_csv(transfer, RUNS / "transfer_predictions.csv")
-    return transfer
+            raise ValueError(f"Method metadata mismatch: {row.checkpoint_path}")
+    return models
 
 
 def freeze() -> dict:
-    verify_frozen_inputs()
+    verify_predecessor_models()
     experiment = protocol.REPO / "analysis" / EXPERIMENT_ID
     files = [
         protocol.REPO / "analysis" / "protocol.py",
@@ -398,16 +274,15 @@ def freeze() -> dict:
         protocol.REPO / "analysis" / "reporting.py",
         experiment / "run.py",
         experiment / "study.py",
-        experiment / "geometry.py",
+        experiment / "pca.py",
         experiment / "report.py",
         protocol.REPO / "pipeline" / "prepare_data.py",
         protocol.REPO / "pipeline" / "embed_sceptr.py",
-        protocol.REPO / "pipeline" / "sceptr_fast.py",
+        protocol.REPO / "pipeline" / "sceptr_adapter.py",
         protocol.REPO / "pipeline" / "build_manifests.py",
-        INPUT_MANIFEST,
         MODEL_MANIFEST,
         RUNS / "transfer_predictions.csv",
-        GEOMETRY / "per_seed_patient_coordinates.csv",
+        PCA / "per_seed_patient_coordinates.csv",
         RESULTS / "metrics_by_seed.csv",
         RESULTS / "metrics_summary.csv",
         RESULTS / "per_seed_pca_summary.csv",
@@ -436,7 +311,9 @@ def freeze() -> dict:
         },
     }
     FREEZE.parent.mkdir(parents=True, exist_ok=True)
-    FREEZE.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    temporary = FREEZE.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(FREEZE)
     return payload
 
 

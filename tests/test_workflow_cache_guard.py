@@ -21,7 +21,7 @@ from pipeline import workflow
 
 
 class CacheGuardTest(unittest.TestCase):
-    def test_changed_upstream_archives_generated_roots_and_continues(self) -> None:
+    def test_changed_upstream_archives_caches_but_keeps_results(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory) / "repo"
             state = repo / "artifacts" / "provenance" / "data" / "internal.json"
@@ -39,7 +39,7 @@ class CacheGuardTest(unittest.TestCase):
             ), redirect_stdout(StringIO()):
                 workflow.guard_consumer(
                     "experiment_test",
-                    (checkpoints, runs, results),
+                    (checkpoints, runs),
                     (state,),
                 )
                 for root in (checkpoints, runs, results):
@@ -48,23 +48,24 @@ class CacheGuardTest(unittest.TestCase):
                 state.write_text("upstream-v2", encoding="utf-8")
                 workflow.guard_consumer(
                     "experiment_test",
-                    (checkpoints, runs, results),
+                    (checkpoints, runs),
                     (state,),
                 )
-                for root in (checkpoints, runs, results):
+                for root in (checkpoints, runs):
                     self.assertFalse(root.exists())
+                self.assertTrue((results / "generated.txt").exists())
                 events = list(
                     (repo / "backup" / "stale_cache" / "experiment_test").iterdir()
                 )
                 self.assertEqual(len(events), 1)
                 record = json.loads((events[0] / "manifest.json").read_text(encoding="utf-8"))
-                self.assertEqual(len(record["moved"]), 3)
+                self.assertEqual(len(record["moved"]), 2)
                 checkpoints.mkdir(parents=True)
                 marker = checkpoints / "new.txt"
                 marker.write_text("new", encoding="utf-8")
                 workflow.guard_consumer(
                     "experiment_test",
-                    (checkpoints, runs, results),
+                    (checkpoints, runs),
                     (state,),
                 )
                 self.assertTrue(marker.exists())

@@ -5,8 +5,26 @@ dist/
 __pycache__/
 *.pyc
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
 .coverage
 htmlcov/
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini
+.env
+.env.*
+secrets.json
+*.log
+*.pt
+*.pth
+*.ckpt
+*.npy
+*.npz
+*.parquet
+*.pkl
 
 # Local data, working material, and internal project notes.
 data/**
@@ -27,33 +45,85 @@ third_party/vdjdb/2026-05-16/**
 !third_party/vdjdb/2026-05-16/release/vdjdb-2026-05-16/vdjdb.slim.meta.txt
 !third_party/vdjdb/2026-05-16/release/vdjdb-2026-05-16/vdjdb.slim.txt
 
-# Large scientific artifacts stay local; compact manifests remain reviewable.
+# Large scientific artifacts stay local; only the named public manifests are tracked.
 artifacts/*
 !artifacts/manifests/
-!artifacts/manifests/*.csv
-!artifacts/manifests/*.json
+!artifacts/manifests/alice_runtime_freeze.json
+!artifacts/manifests/experiment_03_external_generalisation_freeze.json
+!artifacts/manifests/experiment_03_external_generalisation_models.csv
+!artifacts/manifests/external_representations.csv
+!artifacts/manifests/external_samples.csv
+!artifacts/manifests/external_subjects.csv
+!artifacts/manifests/fivefold_seed913271.csv
+!artifacts/manifests/internal_representations.csv
+!artifacts/manifests/internal_samples.csv
+!artifacts/manifests/internal_subjects.csv
+!artifacts/manifests/representation_comparison_external.csv
+!artifacts/manifests/representation_comparison_internal.csv
+!artifacts/manifests/representations.csv
+!artifacts/manifests/samples.csv
+!artifacts/manifests/subjects.csv
+!artifacts/report_cache_release.json
 !artifacts/alice/
 artifacts/alice/*
-!artifacts/alice/*.csv
-!artifacts/alice/source_manifests/
-!artifacts/alice/source_manifests/*.csv
+!artifacts/alice/external_file_manifest.csv
+!artifacts/alice/external_manifest.csv
+!artifacts/alice/external_samples.csv
+!artifacts/alice/internal_file_manifest.csv
+!artifacts/alice/internal_manifest.csv
+!artifacts/alice/internal_samples.csv
 
-# Keep aggregate tables, reports and figures; ignore patient predictions,
-# fold caches and checkpoints copied under result trees.
+# Keep only the approved aggregate tables and figures. Patient predictions,
+# fold caches and checkpoints copied under result trees remain ignored.
 results/**
 !results/**/
-!results/**/*.png
-!results/**/*.svg
-!results/**/*.pdf
-!results/**/*.md
-!results/**/*.csv
-# Patient-level outputs belong under ignored artifacts/runs, even if a future
-# report accidentally writes one beneath results.
-results/**/*prediction*.csv
-results/**/*patient*.csv
-results/**/*subject*.csv
-results/**/*sample*.csv
-results/**/*coordinate*.csv
+!results/experiment_01_internal_baseline/metrics_by_seed.csv
+!results/experiment_01_internal_baseline/metrics_summary.csv
+!results/experiment_01_internal_baseline/seed_manifest.csv
+!results/experiment_01_internal_baseline/figures/representation_internal_auc.png
+!results/experiment_01_internal_baseline/supplementary/figures/representation_learning_curves.png
+!results/experiment_02_seed_and_attention_normalisation/factorization_pooled_oof.csv
+!results/experiment_02_seed_and_attention_normalisation/metrics_by_seed.csv
+!results/experiment_02_seed_and_attention_normalisation/metrics_summary.csv
+!results/experiment_02_seed_and_attention_normalisation/runtime_manifest.csv
+!results/experiment_02_seed_and_attention_normalisation/figures/attention_classifier_factorization.png
+!results/experiment_02_seed_and_attention_normalisation/figures/normalizer_internal_auc.png
+!results/experiment_02_seed_and_attention_normalisation/figures/selected_seed_prediction_separation.png
+!results/experiment_02_seed_and_attention_normalisation/supplementary/figures/factorization_learning_curves.png
+!results/experiment_02_seed_and_attention_normalisation/supplementary/figures/normalizer_learning_curves.png
+!results/experiment_02_seed_and_attention_normalisation/supplementary/figures/selected_seed_300epoch_learning_curves.png
+!results/experiment_03_external_generalisation/metrics_by_seed.csv
+!results/experiment_03_external_generalisation/metrics_summary.csv
+!results/experiment_03_external_generalisation/pca_transfer_example_manifest.csv
+!results/experiment_03_external_generalisation/per_seed_pca_summary.csv
+!results/experiment_03_external_generalisation/figures/frozen_internal_external_auc.png
+!results/experiment_03_external_generalisation/figures/seed_resolved_pca_transfer_examples.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/alpha_page_1.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/alpha_page_2.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/alpha_page_3.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/beta_page_1.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/beta_page_2.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/beta_page_3.png
+!results/experiment_04_alice_model/method_manifest.csv
+!results/experiment_04_alice_model/metrics_by_seed.csv
+!results/experiment_04_alice_model/metrics_summary.csv
+!results/experiment_04_alice_model/retention_summary.csv
+!results/experiment_04_alice_model/figures/family_contributions.png
+!results/experiment_04_alice_model/figures/pooling_and_heads.png
+!results/experiment_04_alice_model/figures/retention_and_zero_hits.png
+!results/experiment_04_alice_model/figures/vdjdb_validation.png
+!results/experiment_04_alice_model/future_work/metrics_by_seed.csv
+!results/experiment_04_alice_model/future_work/metrics_summary.csv
+!results/experiment_04_alice_model/future_work/figures/representation_dependence.png
+!results/experiment_04_alice_model/future_work/gate_free_pca/gate_free_pca_summary.csv
+!results/experiment_04_alice_model/future_work/gate_free_pca/figures/gate_free_alice_patient_vector_pca.png
+!results/experiment_04_alice_model/no_hard_gate/metrics_by_seed.csv
+!results/experiment_04_alice_model/no_hard_gate/metrics_summary.csv
+!results/experiment_04_alice_model/no_hard_gate/paired_vs_hard_030.csv
+!results/experiment_04_alice_model/no_hard_gate/figures/paired_no_gate_vs_hard_030.png
+!results/experiment_04_alice_model/no_hard_gate/supplementary/figures/no_gate_learning_curves.png
+!results/experiment_04_alice_model/supplementary/figures/hard_gate_learning_curves.png
+!results/experiment_04_alice_model/tables/vdjdb_validation_summary.csv
 
 # Local R state.
 .Rhistory
@@ -62,5 +132,3 @@ results/**/*coordinate*.csv
 .Rproj.user/
 .r-library/
 renv/library/
-old/
-OLD/

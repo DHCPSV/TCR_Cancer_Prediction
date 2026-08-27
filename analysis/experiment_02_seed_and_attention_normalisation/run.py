@@ -9,11 +9,11 @@ if __package__ in (None, ""):
 
 from analysis import protocol, training
 from analysis.experiment_02_seed_and_attention_normalisation import (
+    layer_seed_study,
     normalizer_study,
     report,
-    seed_mechanism,
 )
-from pipeline import workflow
+from pipeline import report_cache, workflow
 
 
 EXPERIMENT_ID = "experiment_02_seed_and_attention_normalisation"
@@ -30,26 +30,39 @@ def main(argv: list[str] | None = None) -> None:
         default="all",
     )
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="cuda")
+    parser.add_argument("--input-mode", choices=("raw", "cached"), default="raw")
     args = parser.parse_args(argv)
 
+    if args.input_mode == "cached":
+        if args.stage == "internal":
+            parser.error("cached mode contains report inputs, not training inputs")
+        report_cache.verify()
+        if args.stage in ("self-test", "all"):
+            layer_seed_study.self_test()
+            normalizer_study.self_test()
+        if args.stage in ("report", "all"):
+            report.generate()
+        if args.stage in ("diagnostics", "all"):
+            report.diagnostics()
+        return
+
     if args.stage in ("self-test", "all"):
-        seed_mechanism.self_test()
+        layer_seed_study.self_test()
         normalizer_study.self_test()
     if args.stage in ("internal", "diagnostics", "all"):
         upstream = workflow.ensure_internal()
         workflow.guard_consumer(
             EXPERIMENT_ID,
-            (CHECKPOINTS, RUN_ARTIFACTS, RESULTS),
+            (CHECKPOINTS, RUN_ARTIFACTS),
             (upstream.path,),
         )
     if args.stage in ("internal", "all"):
         device = training.device_from(args.device)
-        factorization = seed_mechanism.internal(device)
-        normalizers = normalizer_study.internal(device)
-        normalizer_study.write_internal_predictions(factorization, normalizers)
+        layer_seed_study.internal(device)
+        normalizer_study.internal(device)
     if args.stage == "diagnostics":
         device = training.device_from(args.device)
-        seed_mechanism.diagnostics(device)
+        layer_seed_study.diagnostics(device)
         report.diagnostics()
     if args.stage in ("report", "all"):
         report.generate()

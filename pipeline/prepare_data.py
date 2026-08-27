@@ -31,7 +31,7 @@ def canonical_gene(value: str, prefix: str) -> str | None:
         value = str(
             tt.tr.standardize(value, enforce_functional=True, log_failures=False)
         ).strip()
-    except Exception:
+    except (KeyError, TypeError, ValueError):
         return None
     return value if value.startswith(prefix) else None
 
@@ -51,14 +51,20 @@ def clean_airr_rows(
     chain: str,
 ) -> pd.DataFrame:
     frame = pd.read_csv(raw_file, sep="\t", dtype=str, keep_default_na=False)
+    input_rows = len(frame)
     frame.columns = [str(column).strip() for column in frame]
     frame = select_subject(frame, selector_column, selector_value)
+    selected_rows = len(frame)
     required = {"v_call", "j_call", "junction_aa"}
     if missing := required - set(frame):
         raise ValueError(f"{raw_file} is missing {sorted(missing)}")
     if "productive" in frame:
         productive = frame["productive"].str.strip().str.upper()
-        frame = frame.loc[productive.isin({"T", "TRUE", "1"})]
+        productive_mask = productive.isin({"T", "TRUE", "1"})
+        non_productive_rows = int((~productive_mask).sum())
+        frame = frame.loc[productive_mask]
+    else:
+        non_productive_rows = 0
 
     _, _, _, prefix = CHAIN[chain]
     v = frame["v_call"].map(lambda value: canonical_gene(value, prefix + "V"))
@@ -70,7 +76,7 @@ def clean_airr_rows(
         if "junction" in frame
         else pd.Series("", index=frame.index, dtype=str)
     )
-    return pd.DataFrame(
+    result = pd.DataFrame(
         {
             "v_gene": v.loc[keep].tolist(),
             "j_gene": j.loc[keep].tolist(),
@@ -78,6 +84,16 @@ def clean_airr_rows(
             "cdr3_nt": nucleotide.loc[keep].tolist(),
         }
     )
+    result.attrs["filter_counts"] = {
+        "input_rows": input_rows,
+        "selected_rows": selected_rows,
+        "non_productive_rows": non_productive_rows,
+        "invalid_v_gene_rows": int(v.isna().sum()),
+        "invalid_j_gene_rows": int(j.isna().sum()),
+        "missing_cdr3_rows": int(cdr3.isna().sum()),
+        "retained_rows": len(result),
+    }
+    return result
 
 
 def convert(
@@ -93,6 +109,7 @@ def convert(
     output[v_column] = cleaned["v_gene"]
     output[j_column] = cleaned["j_gene"]
     output[cdr3_column] = cleaned["cdr3_aa"]
+    output.attrs["filter_counts"] = cleaned.attrs["filter_counts"]
     return output
 
 
@@ -158,16 +175,32 @@ def run(role: str, chain: str, overwrite: bool) -> dict[str, int]:
             progress.advance()
             continue
         pieces = []
+        filter_counts = {
+            "input_rows": 0,
+            "selected_rows": 0,
+            "non_productive_rows": 0,
+            "invalid_v_gene_rows": 0,
+            "invalid_j_gene_rows": 0,
+            "missing_cdr3_rows": 0,
+            "retained_rows": 0,
+        }
         for raw_file, selector_column, selector_value in sources:
-            pieces.append(
-                convert(raw_file, selector_column, selector_value, chain)
-            )
+            piece = convert(raw_file, selector_column, selector_value, chain)
+            for name, value in piece.attrs["filter_counts"].items():
+                filter_counts[name] += int(value)
+            pieces.append(piece)
         target.parent.mkdir(parents=True, exist_ok=True)
         result = pd.concat(pieces, ignore_index=True)
         temporary = Path(f"{target}.tmp")
         result.to_csv(temporary, sep="\t", index=False)
         temporary.replace(target)
-        provenance.write_sidecar(target, specification, REPO, rows=len(result))
+        provenance.write_sidecar(
+            target,
+            specification,
+            REPO,
+            rows=len(result),
+            filter_counts=filter_counts,
+        )
         counts["rebuilt"] += 1
         progress.advance()
     progress.summary(**counts)

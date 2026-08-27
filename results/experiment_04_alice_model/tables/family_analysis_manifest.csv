@@ -1,3 +1,0 @@
-ranking_type,reference_method_id,reference_method_label,chain,pooling_normalisation,alice_evidence_threshold,seed_id,seed_value,seed_count,fold_count,ranking_statistic
-model_contribution,alice_l2_linear,L2 + Linear,alpha,l2,0.3,S01,777,1,5,held_out_cancer_logit_contribution
-alice_significance,not_applicable,ALICE only,alpha,not_applicable,0.3,not_applicable,not_applicable,0,0,minimum_retained_member_q_value

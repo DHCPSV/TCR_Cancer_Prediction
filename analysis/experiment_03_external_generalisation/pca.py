@@ -126,7 +126,7 @@ def prepare(
     internal_predictions: pd.DataFrame,
     external_predictions: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Create only the seed-resolved patient-vector geometry used in the report."""
+    """Create the seed-resolved patient-vector PCA used in the report."""
     predictions = pd.concat(
         [internal_predictions, external_predictions],
         ignore_index=True,
@@ -188,7 +188,7 @@ def prepare(
 
                     if set(internal_seen.values()) != {1}:
                         raise ValueError(
-                            "Internal geometry is not one-vector-per-patient OOF: "
+                            "Internal PCA input is not one-vector-per-patient OOF: "
                             f"{method_id}/{chain}/{seed_id}"
                         )
                     scores = _prediction_lookup(
@@ -237,7 +237,7 @@ def prepare(
                     seed_frame["pc1_sign_flipped"] = sign_flipped
                     point_parts.append(seed_frame)
 
-            print(f"geometry: {method_id}, {chain}", flush=True)
+            print(f"PCA: {method_id}, {chain}", flush=True)
             del internal_tensors, external_tensors
             if device.type == "cuda":
                 torch.cuda.empty_cache()
@@ -245,7 +245,7 @@ def prepare(
     result = pd.concat(point_parts, ignore_index=True)
     protocol.atomic_csv(
         result,
-        study.GEOMETRY / "per_seed_patient_coordinates.csv",
+        study.PCA / "per_seed_patient_coordinates.csv",
     )
     return result
 
@@ -271,4 +271,4 @@ def self_test() -> None:
     np.testing.assert_allclose(first[1], second[1], atol=1e-12)
     np.testing.assert_allclose(first[2], second[2], atol=1e-12)
     assert first[3] == second[3]
-    print("experiment_03_external_generalisation geometry self-test passed")
+    print("experiment_03_external_generalisation PCA self-test passed")

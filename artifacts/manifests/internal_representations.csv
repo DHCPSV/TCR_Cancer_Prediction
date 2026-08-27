@@ -1,4 +1,4 @@
-subject_id,legacy_patient_id,chain,cohort,label,role,embedding_file,tcr_count,embedding_dim,representation_method,representation_version,sha256
+subject_id,source_patient_id,chain,cohort,label,role,embedding_file,tcr_count,embedding_dim,representation_method,representation_version,sha256
 UP_0037,dcr_UP_0037_1_alpha,alpha,internal_control,0,internal,artifacts/representations/internal/alpha/sceptr/UP_0037.pt,21028,64,sceptr,sceptr-fast-tokeniser-v1,fb2db60407335698e0399055dcd736988a062eefb0d37f551ceeeb32d363b39a
 UP_0082,dcr_UP_0082_1_alpha,alpha,internal_control,0,internal,artifacts/representations/internal/alpha/sceptr/UP_0082.pt,10910,64,sceptr,sceptr-fast-tokeniser-v1,364ac14dbd3f1ce4971f22a10be627e51def0d2c9809b9e598ecdb46cdc42ff4
 UP_0144,dcr_UP_0144_1_alpha,alpha,internal_control,0,internal,artifacts/representations/internal/alpha/sceptr/UP_0144.pt,50441,64,sceptr,sceptr-fast-tokeniser-v1,628ad1b6621cc01d6271974979b028b6fb6d7660eba306595b3b054bf4a39970

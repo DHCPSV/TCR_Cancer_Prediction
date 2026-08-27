@@ -24,7 +24,6 @@ STALE_CACHE_ROOT = REPO / "backup" / "stale_cache"
 class ReadyState:
     role: str
     path: Path
-    fingerprint: str
 
 
 def _role_is_bootstrapped(role: str) -> bool:
@@ -76,7 +75,7 @@ def _role_state(role: str) -> ReadyState:
     )
     state_path = STATE_ROOT / "data" / f"{role}.json"
     provenance.write_state(state_path, specification)
-    return ReadyState(role, state_path, specification["fingerprint"])
+    return ReadyState(role, state_path)
 
 
 def ensure(role: str, *, batch_size: int = 4096) -> ReadyState:
@@ -112,7 +111,6 @@ def _validated_cache_roots(cache_roots: Iterable[Path]) -> list[Path]:
         for path in (
             REPO / "artifacts" / "checkpoints",
             REPO / "artifacts" / "runs",
-            REPO / "results",
         )
     )
     roots = []
@@ -125,8 +123,8 @@ def _validated_cache_roots(cache_roots: Iterable[Path]) -> list[Path]:
             for parent in generated_parents
         ):
             raise ValueError(
-                f"Experiment cache root must be below artifacts/checkpoints, "
-                f"artifacts/runs or results: {path}"
+                "Experiment cache root must be below artifacts/checkpoints "
+                f"or artifacts/runs: {path}"
             )
         roots.append(resolved)
     if len(set(roots)) != len(roots):

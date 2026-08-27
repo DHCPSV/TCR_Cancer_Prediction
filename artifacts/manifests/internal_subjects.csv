@@ -1,4 +1,4 @@
-subject_id,legacy_patient_id,cohort,label,role,has_alpha,has_beta
+subject_id,source_patient_id,cohort,label,role,has_alpha,has_beta
 LTX0001,LTX0001_positive,tx100_cancer,1,internal,1,1
 LTX0013,LTX0013_positive,tx100_cancer,1,internal,1,1
 LTX0015,LTX0015_positive,tx100_cancer,1,internal,1,1

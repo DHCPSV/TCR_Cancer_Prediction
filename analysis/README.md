@@ -1,38 +1,29 @@
-# Analysis modules and stages
+# Analysis modules
 
-Each experiment has one command-line entry point, `run.py`.
+Each experiment has one command-line entry point: `run.py`.
 
-| Experiment | Methods and computation | Reporting |
+| Experiment | Model and computation | Reporting |
 |---|---|---|
-| `experiment_01_internal_baseline` | `methods.py`, `prepare.py`, `study.py` | `report.py` |
-| `experiment_02_seed_and_attention_normalisation` | `methods.py`, `seed_mechanism.py`, `normalizer_study.py` | `report.py` |
-| `experiment_03_external_generalisation` | `study.py`, `geometry.py` | `report.py` |
-| `experiment_04_alice_model` | `methods.py`, `prepare.py`, `core.py`, `study.py`, `no_hard_gate.py`, `families.py`, `vdjdb_lookup.py`, `gate_free_pca.py` | `report.py`, `learning_curves.py` |
+| 1 | `methods.py`, `prepare.py`, `study.py` | `report.py` |
+| 2 | `methods.py`, `layer_seed_study.py`, `normalizer_study.py` | `report.py` |
+| 3 | `study.py`, `pca.py` | `report.py` |
+| 4 | `methods.py`, `prepare.py`, `study.py`, `families.py`, `vdjdb_lookup.py`, `gate_free_pca.py` | `report.py`, `learning_curves.py` |
 
-Shared modules:
+Shared modules are deliberately small:
 
-- `protocol.py`: paths, schemas, fixed folds, manifests, hashes and atomic
-  writes;
-- `training.py`: shared training, prediction, checkpoint and history logic;
-- `reporting.py`: metrics, bootstrap AUC and plot styling;
-- `seed_display.py`: fixed seed-group display labels.
+- `attention_mil.py`: the shared Attention MIL model;
+- `protocol.py`: paths, schemas, fixed seeds, manifests and atomic writes;
+- `training.py`: training, prediction and checkpoint/history binding;
+- `reporting.py`: metrics and plot styling.
 
-Run from the repository root:
+## Stages
 
-```powershell
-python -m analysis.experiment_01_internal_baseline.run
-python -m analysis.experiment_02_seed_and_attention_normalisation.run
-python -m analysis.experiment_03_external_generalisation.run
-python -m analysis.experiment_04_alice_model.run
-```
-
-| Experiment | `all` | Additional stage |
+| Experiment | Main stages | Optional stage |
 |---|---|---|
-| 01 | preparation, internal study and report | `diagnostics`: learning curves from existing histories |
-| 02 | 50-epoch seed factorisation, normaliser study and report | `diagnostics`: optional 300-epoch selected-seed study |
-| 03 | frozen transfer, report, seed-resolved geometry and freeze | `geometry` is also available separately |
-| 04 | ALICE preparation, hard-gate study, locked validation, family/VDJdb analysis and no-gate comparison | `future-work`: representation dependence and gate-free PCA |
+| 1 | `internal`, `report`, `all` | `diagnostics` |
+| 2 | `internal`, `report`, `all` | `diagnostics` |
+| 3 | `prepare`, `report`, `pca`, `freeze`, `all` | — |
+| 4 | `internal`, `validation`, `report`, `all` | `future-work` |
 
-All four runners also support `--stage self-test`. Focused stages such as
-`prepare`, `internal`, `report`, `assemble`, `geometry`, `freeze` and
-`validation` are intended for recovery or report-only reruns.
+All runners also support `self-test` and `--input-mode {raw,cached}`. Cached
+mode accepts report stages only and does not prepare data or train models.

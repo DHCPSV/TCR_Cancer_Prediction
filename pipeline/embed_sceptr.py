@@ -12,9 +12,9 @@ import torch
 from pipeline import provenance
 
 if __package__:
-    from .sceptr_fast import calc_vector_representations
+    from .sceptr_adapter import calc_vector_representations
 else:
-    from sceptr_fast import calc_vector_representations
+    from sceptr_adapter import calc_vector_representations
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -76,8 +76,8 @@ def run(role: str, chain: str, batch_size: int, overwrite: bool) -> dict[str, in
     )
     samples = samples.loc[samples["chain"] == chain]
     representations = representations.loc[representations["chain"] == chain]
-    model = sceptr._get_default_model()
-    model._batch_size = batch_size
+    model = sceptr.variant.default()
+    model.set_batch_size(batch_size)
     model_sha256 = model_fingerprint(model)
     rows = list(representations.itertuples(index=False))
     progress = provenance.Progress(f"embed SCEPTR {role}/{chain}", len(rows))
@@ -105,7 +105,7 @@ def run(role: str, chain: str, batch_size: int, overwrite: bool) -> dict[str, in
                 "embedding_dim": 64,
                 "representation_method": row.representation_method,
                 "representation_version": row.representation_version,
-                "model_variant": "sceptr._get_default_model",
+                "model_variant": "sceptr.variant.default",
                 "model_state_sha256": model_sha256,
             },
             (Path(__file__), Path(calc_vector_representations.__code__.co_filename)),

@@ -13,8 +13,8 @@ from analysis.experiment_04_alice_model.families import (
     FAMILY_ARTIFACTS,
     FAMILY_RANKS,
     REFERENCE_SEED_VALUE,
-    RESULTS,
 )
+from analysis.experiment_04_alice_model.methods import RESULTS
 
 
 VDJDB_RELEASE = "2026-05-16"
@@ -79,7 +79,7 @@ def load_vdjdb() -> pd.DataFrame:
     record = source.loc[source["release"] == VDJDB_RELEASE]
     if len(record) != 1:
         raise ValueError(f"Missing unique VDJdb provenance row for {VDJDB_RELEASE}")
-    expected_sha = record.iloc[0]["slim_table_sha256"]
+    expected_sha = record.iloc[0]["derived_table_sha256"]
     observed_sha = protocol.sha256(VDJDB_TABLE)
     if observed_sha != expected_sha:
         raise ValueError(

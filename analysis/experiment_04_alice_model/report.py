@@ -10,14 +10,17 @@ import numpy as np
 import pandas as pd
 
 from analysis import protocol, reporting
-from analysis.experiment_04_alice_model import core, learning_curves, study
+from analysis.experiment_04_alice_model import learning_curves, methods, study
 
 
-def read_predictions(spec: study.StudySpec) -> pd.DataFrame:
-    method_ids = {method.method_id for method in spec.methods}
+def read_predictions(
+    run_artifacts: Path,
+    method_registry: tuple[methods.Method, ...],
+) -> pd.DataFrame:
+    method_ids = {method.method_id for method in method_registry}
     parts = []
     for filename in ("internal_predictions.csv", "external_predictions.csv"):
-        path = spec.run_artifacts / filename
+        path = run_artifacts / filename
         frame = pd.read_csv(path, dtype={"seed_value": str})
         frame = frame.loc[frame["method_id"].isin(method_ids)].copy()
         parts.append(frame)
@@ -60,11 +63,11 @@ def paired_auc(metrics: pd.DataFrame) -> pd.DataFrame:
 
 def auc_figure(
     paired: pd.DataFrame,
-    methods: tuple[core.Method, ...],
+    method_registry: tuple[methods.Method, ...],
     path: Path,
     *,
     title: str | None = None,
-    chains: tuple[str, ...] = core.CHAINS,
+    chains: tuple[str, ...] = methods.CHAINS,
 ) -> None:
     reporting.configure_plot()
     palette = ("#059669", "#10b981", "#ea580c", "#f59e0b", "#7c3aed", "#2563eb")
@@ -77,7 +80,7 @@ def auc_figure(
     )
     axes = axes_grid.ravel()
     for axis, chain in zip(axes, chains):
-        for index, method in enumerate(methods):
+        for index, method in enumerate(method_registry):
             part = paired.loc[
                 (paired["chain"] == chain)
                 & (paired["method_id"] == method.method_id)
@@ -111,7 +114,7 @@ def auc_figure(
 
 def selection_coverage(selection: str, threshold: float | None) -> pd.DataFrame:
     records: list[dict] = []
-    for chain in core.CHAINS:
+    for chain in methods.CHAINS:
         frame = study.dataset("internal", chain)
         for row in frame.itertuples(index=False):
             evidence = np.load(protocol.repo_path(row.evidence_file), allow_pickle=False)
@@ -133,11 +136,16 @@ def selection_coverage(selection: str, threshold: float | None) -> pd.DataFrame:
 
 
 def retention_report() -> pd.DataFrame:
-    selections = (("hard_gate_0.30", core.HARD_THRESHOLD), ("no_hard_gate", None))
-    coverage = pd.concat(
-        [selection_coverage(selection, threshold) for selection, threshold in selections],
-        ignore_index=True,
-    )
+    selections = (("hard_gate_0.30", methods.HARD_THRESHOLD), ("no_hard_gate", None))
+    coverage_path = methods.RUN_ARTIFACTS / "retention_by_subject.csv"
+    if coverage_path.exists():
+        coverage = pd.read_csv(coverage_path)
+    else:
+        coverage = pd.concat(
+            [selection_coverage(selection, threshold) for selection, threshold in selections],
+            ignore_index=True,
+        )
+        protocol.atomic_csv(coverage, coverage_path)
     summary = (
         coverage.groupby(["selection", "chain", "label"], as_index=False)
         .agg(
@@ -149,12 +157,12 @@ def retention_report() -> pd.DataFrame:
         )
     )
     summary["zero_hit_fraction"] = summary["zero_hit_subjects"] / summary["subjects"]
-    protocol.atomic_csv(summary, core.OUTPUT / "retention_summary.csv")
+    protocol.atomic_csv(summary, methods.RESULTS / "retention_summary.csv")
 
     reporting.configure_plot()
     figure, axes = plt.subplots(2, 2, figsize=(10.5, 8.2), sharey="row", constrained_layout=True)
     for row_index, (selection, _) in enumerate(selections):
-        for column_index, chain in enumerate(core.CHAINS):
+        for column_index, chain in enumerate(methods.CHAINS):
             axis = axes[row_index, column_index]
             part = coverage.loc[
                 (coverage["selection"] == selection) & (coverage["chain"] == chain)
@@ -179,7 +187,7 @@ def retention_report() -> pd.DataFrame:
             axis.set_ylim(bottom=0)
             if column_index == 0:
                 axis.set_ylabel("Fraction of TCRs with non-zero pooling weight")
-    path = core.OUTPUT / "figures" / "retention_and_zero_hits.png"
+    path = methods.RESULTS / "figures" / "retention_and_zero_hits.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(path, bbox_inches="tight", pad_inches=0.08)
     plt.close(figure)
@@ -187,30 +195,29 @@ def retention_report() -> pd.DataFrame:
 
 
 def learning_curve_report(
-    spec: study.StudySpec,
-    methods: tuple[core.Method, ...],
+    history: pd.DataFrame,
+    method_registry: tuple[methods.Method, ...],
     target: Path,
     variant_label: str,
 ) -> None:
-    history = study.aggregate_learning_history(spec)
     labels = tuple(
         (method.method_id, method.label.replace("No gate + ", ""))
-        for method in methods
+        for method in method_registry
     )
     learning_curves.plot_learning_curves(
         history,
         labels,
-        core.CHAINS,
+        methods.CHAINS,
         target,
         variant_label,
     )
 
 
 def hard_gate_report() -> pd.DataFrame:
-    predictions = read_predictions(study.HARD_GATE_STUDY)
+    predictions = read_predictions(methods.RUN_ARTIFACTS, methods.MAIN_METHODS)
     metrics, summary = metric_tables(predictions)
-    protocol.atomic_csv(metrics, core.OUTPUT / "metrics_by_seed.csv")
-    protocol.atomic_csv(summary, core.OUTPUT / "metrics_summary.csv")
+    protocol.atomic_csv(metrics, methods.RESULTS / "metrics_by_seed.csv")
+    protocol.atomic_csv(summary, methods.RESULTS / "metrics_summary.csv")
     paired = paired_auc(metrics)
     protocol.atomic_csv(
         pd.DataFrame(
@@ -218,7 +225,7 @@ def hard_gate_report() -> pd.DataFrame:
                 {
                     "method_id": method.method_id,
                     "method_label": method.label,
-                    "scope": "confirmatory_hard_gate",
+                    "scope": "main_hard_gate",
                     "chains": ",".join(method.chains),
                     "seed_ids": ",".join(method.seed_ids),
                     "representation": method.representation,
@@ -226,21 +233,21 @@ def hard_gate_report() -> pd.DataFrame:
                     "classifier_head": method.head,
                     "hard_threshold": method.threshold,
                 }
-                for method in core.METHODS
+                for method in methods.MAIN_METHODS
             ]
         ),
-        core.OUTPUT / "method_manifest.csv",
+        methods.RESULTS / "method_manifest.csv",
     )
     auc_figure(
         paired,
-        core.METHODS,
-        core.OUTPUT / "figures" / "pooling_and_heads.png",
+        methods.MAIN_METHODS,
+        methods.RESULTS / "figures" / "pooling_and_heads.png",
     )
     retention_report()
     learning_curve_report(
-        study.HARD_GATE_STUDY,
-        core.METHODS,
-        core.OUTPUT / "supplementary" / "figures" / "hard_gate_learning_curves.png",
+        study.main_learning_history(),
+        methods.MAIN_METHODS,
+        methods.RESULTS / "supplementary" / "figures" / "hard_gate_learning_curves.png",
         "ALICE evidence > 0.30",
     )
     return metrics
@@ -248,16 +255,16 @@ def hard_gate_report() -> pd.DataFrame:
 
 def hard_gate_comparison_figure(
     comparison: pd.DataFrame,
-    methods: tuple[core.Method, ...],
+    method_registry: tuple[methods.Method, ...],
     path: Path,
 ) -> None:
     reporting.configure_plot()
     colours = ("#059669", "#10b981", "#ea580c", "#f59e0b")
     figure, axes = plt.subplots(2, 2, figsize=(9.2, 8.2), constrained_layout=True)
-    for row_index, chain in enumerate(core.CHAINS):
+    for row_index, chain in enumerate(methods.CHAINS):
         for column_index, split in enumerate(("internal_oof", "locked_external")):
             axis = axes[row_index, column_index]
-            for method, colour in zip(methods, colours):
+            for method, colour in zip(method_registry, colours):
                 part = comparison.loc[
                     (comparison["chain"] == chain)
                     & (comparison["split"] == split)
@@ -286,16 +293,22 @@ def hard_gate_comparison_figure(
     plt.close(figure)
 
 
-def no_gate_report(spec: study.StudySpec) -> pd.DataFrame:
-    predictions = read_predictions(spec)
+def no_hard_gate_report() -> pd.DataFrame:
+    predictions = read_predictions(
+        methods.NO_HARD_GATE_RUN_ARTIFACTS,
+        methods.NO_HARD_GATE_METHODS,
+    )
     metrics, summary = metric_tables(predictions)
-    protocol.atomic_csv(metrics, spec.output / "metrics_by_seed.csv")
-    protocol.atomic_csv(summary, spec.output / "metrics_summary.csv")
+    protocol.atomic_csv(metrics, methods.NO_HARD_GATE_RESULTS / "metrics_by_seed.csv")
+    protocol.atomic_csv(summary, methods.NO_HARD_GATE_RESULTS / "metrics_summary.csv")
 
-    hard = pd.read_csv(core.OUTPUT / "metrics_by_seed.csv", dtype={"seed_value": str})
+    hard = pd.read_csv(methods.RESULTS / "metrics_by_seed.csv", dtype={"seed_value": str})
     hard_ids = {
         hard_method.method_id: no_gate_method.method_id
-        for hard_method, no_gate_method in zip(core.METHODS, spec.methods)
+        for hard_method, no_gate_method in zip(
+            methods.MAIN_METHODS,
+            methods.NO_HARD_GATE_METHODS,
+        )
     }
     hard = hard.loc[hard["method_id"].isin(hard_ids)].copy()
     hard["method_id"] = hard["method_id"].map(hard_ids)
@@ -308,31 +321,34 @@ def no_gate_report(spec: study.StudySpec) -> pd.DataFrame:
     comparison["auc_delta_no_gate_minus_hard_030"] = (
         comparison["auc_no_gate"] - comparison["auc_hard_030"]
     )
-    protocol.atomic_csv(comparison, spec.output / "paired_vs_hard_030.csv")
+    protocol.atomic_csv(comparison, methods.NO_HARD_GATE_RESULTS / "paired_vs_hard_030.csv")
     hard_gate_comparison_figure(
         comparison,
-        spec.methods,
-        spec.output / "figures" / "paired_no_gate_vs_hard_030.png",
+        methods.NO_HARD_GATE_METHODS,
+        methods.NO_HARD_GATE_RESULTS / "figures" / "paired_no_gate_vs_hard_030.png",
     )
     learning_curve_report(
-        spec,
-        spec.methods,
-        spec.output / "supplementary" / "figures" / "no_gate_learning_curves.png",
+        study.no_hard_gate_learning_history(),
+        methods.NO_HARD_GATE_METHODS,
+        methods.NO_HARD_GATE_RESULTS / "supplementary" / "figures" / "no_gate_learning_curves.png",
         "ALICE evidence > 0 (no 0.30 threshold)",
     )
     return metrics
 
 
 def future_work_report() -> pd.DataFrame:
-    predictions = read_predictions(study.FUTURE_WORK_STUDY)
+    predictions = read_predictions(
+        methods.RUN_ARTIFACTS / "future_work",
+        methods.REPRESENTATION_METHODS,
+    )
     metrics, summary = metric_tables(predictions)
-    output = study.FUTURE_WORK_STUDY.output
+    output = methods.RESULTS / "future_work"
     protocol.atomic_csv(metrics, output / "metrics_by_seed.csv")
     protocol.atomic_csv(summary, output / "metrics_summary.csv")
     paired = paired_auc(metrics)
     auc_figure(
         paired,
-        study.FUTURE_WORK_METHODS,
+        methods.REPRESENTATION_METHODS,
         output / "figures" / "representation_dependence.png",
         title="Preliminary representation dependence (partial Alpha-chain study)",
         chains=("alpha",),

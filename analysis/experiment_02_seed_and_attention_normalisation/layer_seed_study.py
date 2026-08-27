@@ -1,9 +1,4 @@
-"""Attention/classifier seed factorisation and its opt-in long-run diagnostic.
-
-The 50-epoch factorisation is part of the formal experiment.  Only
-``diagnostics()`` extends selected seeds to 300 epochs, and the runner keeps
-that work outside ``--stage all``.
-"""
+"""Layer-seed comparison and the optional 300-epoch diagnostic."""
 
 from __future__ import annotations
 
@@ -15,7 +10,7 @@ import numpy as np
 import pandas as pd
 import torch
 from analysis import protocol, reporting, training
-from analysis.experiment_02_seed_and_attention_normalisation.methods import SparsemaxMIL
+from analysis.attention_mil import AttentionMIL
 from pipeline import provenance
 
 
@@ -38,7 +33,7 @@ BEHAVIOUR_ORDER = ("lucky", "moderate", "ordinary")
 TRAJECTORY_SEEDS = ("S01", "S02", "S03")
 FACTORIZATION_HISTORY_EPOCHS = (1, *range(METRIC_INTERVAL, EPOCHS + 1, METRIC_INTERVAL))
 RUN_ARTIFACTS = protocol.repo_path(f"artifacts/runs/{EXPERIMENT_ID}")
-CHECKPOINTS = protocol.repo_path(f"artifacts/checkpoints/{EXPERIMENT_ID}/seed_mechanism")
+CHECKPOINTS = protocol.repo_path(f"artifacts/checkpoints/{EXPERIMENT_ID}/layer_seed_study")
 
 
 def seed_value(seed_id: str) -> int:
@@ -63,12 +58,12 @@ def internal_rows(chain: str = "alpha") -> pd.DataFrame:
     return frame.reset_index(drop=True)
 
 
-def reference_model(seed: int) -> SparsemaxMIL:
+def reference_model(seed: int) -> AttentionMIL:
     training.set_seed(seed)
-    return SparsemaxMIL()
+    return AttentionMIL("sparsemax")
 
 
-def layer_seeded_model(attention_seed: int, classifier_seed: int, device: torch.device) -> SparsemaxMIL:
+def layer_seeded_model(attention_seed: int, classifier_seed: int, device: torch.device) -> AttentionMIL:
     model = reference_model(0)
     attention_reference = reference_model(attention_seed)
     classifier_reference = reference_model(classifier_seed)
@@ -111,7 +106,7 @@ def factor_checkpoint_contract(attention_id: str, classifier_id: str, fold: int)
     }
 
 
-def save_factor_checkpoint(path: Path, model: SparsemaxMIL, attention_id: str, classifier_id: str, fold: int) -> None:
+def save_factor_checkpoint(path: Path, model: AttentionMIL, attention_id: str, classifier_id: str, fold: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".pt.tmp")
     torch.save(
@@ -124,7 +119,7 @@ def save_factor_checkpoint(path: Path, model: SparsemaxMIL, attention_id: str, c
     temporary.replace(path)
 
 
-def load_factor_checkpoint(path: Path, attention_id: str, classifier_id: str, fold: int, device: torch.device) -> SparsemaxMIL:
+def load_factor_checkpoint(path: Path, attention_id: str, classifier_id: str, fold: int, device: torch.device) -> AttentionMIL:
     payload = torch.load(path, map_location=device, weights_only=True)
     expected = factor_checkpoint_contract(attention_id, classifier_id, fold)
     for key, value in expected.items():
@@ -266,29 +261,6 @@ def validate_factor_history_collection(frame: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(blocks, ignore_index=True)
 
 
-def formal_predictions(frame: pd.DataFrame) -> pd.DataFrame:
-    """Map the layer-factorisation table to the shared prediction schema."""
-    result = frame.copy()
-    group_by_seed = dict(FACTORIZATION_SEEDS)
-    result["experiment_id"] = EXPERIMENT_ID
-    result["method_id"] = "attention_classifier_factorization"
-    result["method_label"] = (
-        "Sparsemax Attention MIL: attention/classifier seed factorisation"
-    )
-    result["chain"] = "alpha"
-    result["seed_id"] = result["attention_seed_id"] + ":" + result["classifier_seed_id"]
-    result["seed_value"] = (
-        result["attention_seed_value"].astype(str)
-        + "|"
-        + result["classifier_seed_value"].astype(str)
-    )
-    result["seed_group"] = result["attention_seed_id"].map(group_by_seed)
-    result["split"] = "internal_oof"
-    if result["seed_group"].isna().any():
-        raise ValueError("Unknown attention seed in factorisation predictions")
-    return result.loc[:, protocol.PREDICTION_COLUMNS]
-
-
 def factorization_internal(device: torch.device) -> pd.DataFrame:
     frame = internal_rows("alpha")
     records = frame.to_dict("records")
@@ -381,7 +353,7 @@ def factorization_internal(device: torch.device) -> pd.DataFrame:
 
 
 def evaluate_rows(
-    model: SparsemaxMIL,
+    model: AttentionMIL,
     rows: list[dict],
     tensors: dict[str, torch.Tensor],
     weights: dict[int, float],
@@ -406,7 +378,7 @@ def evaluate_rows(
     return metrics, scores
 
 
-def save_trajectory_checkpoint(path: Path, model: SparsemaxMIL, seed_id: str, fold: int, epoch: int) -> None:
+def save_trajectory_checkpoint(path: Path, model: AttentionMIL, seed_id: str, fold: int, epoch: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".pt.tmp")
     torch.save(
@@ -425,7 +397,7 @@ def save_trajectory_checkpoint(path: Path, model: SparsemaxMIL, seed_id: str, fo
     temporary.replace(path)
 
 
-def load_trajectory_checkpoint(path: Path, seed_id: str, fold: int, epoch: int, device: torch.device) -> SparsemaxMIL:
+def load_trajectory_checkpoint(path: Path, seed_id: str, fold: int, epoch: int, device: torch.device) -> AttentionMIL:
     payload = torch.load(path, map_location=device, weights_only=True)
     expected = {
         "experiment_id": EXPERIMENT_ID,
@@ -445,7 +417,7 @@ def load_trajectory_checkpoint(path: Path, seed_id: str, fold: int, epoch: int, 
 
 
 def record_trajectory_state(
-    model: SparsemaxMIL,
+    model: AttentionMIL,
     seed_id: str,
     fold: int,
     epoch: int,
@@ -536,7 +508,7 @@ def train_trajectory_fold(
         for index, row in enumerate(order, 1):
             target = torch.tensor([[float(row["label"])]], device=device)
             loss = criterion(model(tensors[row["subject_id"]]), target).mean() * weights[int(row["label"])]
-            loss.backward()
+            loss.backward()  # summed, matching the released 50-epoch models
             if index % ACCUMULATION == 0 or index == len(order):
                 optimiser.step()
                 optimiser.zero_grad(set_to_none=True)
@@ -648,9 +620,9 @@ def self_test() -> None:
         * len(FACTORIZATION_HISTORY_EPOCHS)
     )
     assert len(validated) == expected_rows
-    print("experiment 02 seed-mechanism self-test passed")
+    print("experiment 02 layer-seed self-test passed")
 
 
 def internal(device: torch.device) -> pd.DataFrame:
-    """Run the formal 50-epoch attention/classifier factorisation only."""
-    return formal_predictions(factorization_internal(device))
+    """Run the 50-epoch attention/classifier factorisation."""
+    return factorization_internal(device)

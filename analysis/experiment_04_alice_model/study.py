@@ -10,8 +10,8 @@ import pandas as pd
 import torch
 
 from analysis import protocol, training
-from analysis.experiment_04_alice_model import core, learning_curves
-from analysis.experiment_04_alice_model.methods import HARD_THRESHOLD, alice_pool
+from analysis.experiment_04_alice_model import learning_curves, methods
+from analysis.experiment_04_alice_model.methods import alice_pool
 from pipeline import provenance, workflow
 
 
@@ -21,70 +21,47 @@ class PreparationOptions(Protocol):
     workers: int
 
 
-REPRESENTATION_LABELS = {
-    "sceptr": "SCEPTR",
-    "atchley": "Atchley factors",
-    "kidera": "Kidera factors",
-    "aa_property": "Amino-acid properties",
-}
-
-
-FUTURE_WORK_METHODS = tuple(
-    core.Method(
-        f"{representation}_{norm}",
-        f"{REPRESENTATION_LABELS[representation]} + ALICE {norm.upper()}",
-        ("alpha",),
-        core.REPRESENTATIVE_SEEDS,
-        dimensions,
-        norm,
-        "linear",
-        HARD_THRESHOLD,
-        representation,
-    )
-    for representation, dimensions in (
-        ("sceptr", 64),
-        ("atchley", 5),
-        ("kidera", 10),
-        ("aa_property", 14),
-    )
-    for norm in ("l1", "l2")
-)
-
-
 @dataclass(frozen=True)
-class StudySpec:
+class _Study:
     experiment_id: str
     cache_consumer: str
-    methods: tuple[core.Method, ...]
+    methods: tuple[methods.Method, ...]
     checkpoints: Path
     run_artifacts: Path
     output: Path
-    checkpoint_schema: str
     progress_label: str
     record_history: bool = True
-    freeze_experiment_id: str = core.EXPERIMENT_ID
+    freeze_experiment_id: str = methods.EXPERIMENT_ID
     verify_main_checkpoints: bool = True
 
 
-HARD_GATE_STUDY = StudySpec(
-    experiment_id=core.EXPERIMENT_ID,
-    cache_consumer=core.EXPERIMENT_ID,
-    methods=core.METHODS,
-    checkpoints=core.CHECKPOINTS,
-    run_artifacts=core.RUN_ARTIFACTS,
-    output=core.OUTPUT,
-    checkpoint_schema="hard_gate",
+_MAIN = _Study(
+    experiment_id=methods.EXPERIMENT_ID,
+    cache_consumer=methods.EXPERIMENT_ID,
+    methods=methods.MAIN_METHODS,
+    checkpoints=methods.CHECKPOINTS,
+    run_artifacts=methods.RUN_ARTIFACTS,
+    output=methods.RESULTS,
     progress_label="Experiment 04 hard-gate models",
 )
 
-FUTURE_WORK_STUDY = StudySpec(
-    experiment_id=core.EXPERIMENT_ID,
-    cache_consumer=f"{core.EXPERIMENT_ID}.future_work",
-    methods=FUTURE_WORK_METHODS,
-    checkpoints=core.CHECKPOINTS,
-    run_artifacts=core.RUN_ARTIFACTS / "future_work",
-    output=core.OUTPUT / "future_work",
-    checkpoint_schema="future_work",
+_NO_HARD_GATE = _Study(
+    experiment_id=methods.NO_HARD_GATE_EXPERIMENT_ID,
+    cache_consumer=methods.NO_HARD_GATE_EXPERIMENT_ID,
+    methods=methods.NO_HARD_GATE_METHODS,
+    checkpoints=methods.NO_HARD_GATE_CHECKPOINTS,
+    run_artifacts=methods.NO_HARD_GATE_RUN_ARTIFACTS,
+    output=methods.NO_HARD_GATE_RESULTS,
+    progress_label="Experiment 04 models without the hard gate",
+)
+
+_REPRESENTATION = _Study(
+    experiment_id=methods.EXPERIMENT_ID,
+    cache_consumer=f"{methods.EXPERIMENT_ID}.future_work",
+    methods=methods.REPRESENTATION_METHODS,
+    checkpoints=methods.CHECKPOINTS,
+    run_artifacts=methods.RUN_ARTIFACTS / "future_work",
+    output=methods.RESULTS / "future_work",
     progress_label="Experiment 04 preliminary representation dependence",
     record_history=False,
 )
@@ -93,8 +70,8 @@ FUTURE_WORK_STUDY = StudySpec(
 def alice_input_states(split: str) -> tuple[Path, ...]:
     return (
         workflow.STATE_ROOT / "data" / f"{split}.json",
-        core.ALICE / f"{split}_manifest.csv",
-        core.ALICE / f"{split}_file_manifest.csv",
+        methods.ALICE / f"{split}_manifest.csv",
+        methods.ALICE / f"{split}_file_manifest.csv",
     )
 
 
@@ -141,10 +118,10 @@ def prepare_future_work_inputs(split: str, args: PreparationOptions) -> tuple[Pa
     )
 
 
-def guard_internal_cache(spec: StudySpec, states: tuple[Path, ...]) -> None:
+def _guard_internal_cache(spec: _Study, states: tuple[Path, ...]) -> None:
     targets = tuple(
         spec.checkpoints / method.method_id for method in spec.methods
-    ) + (spec.run_artifacts, spec.output)
+    ) + (spec.run_artifacts,)
     workflow.guard_consumer(spec.cache_consumer, targets, states)
 
 
@@ -161,7 +138,7 @@ def dataset(split: str, chain: str, representation: str = "sceptr") -> pd.DataFr
         & (representations["representation_method"] == representation)
     ].copy()
     alice = pd.read_csv(
-        core.ALICE / f"{split}_manifest.csv",
+        methods.ALICE / f"{split}_manifest.csv",
         dtype=str,
         keep_default_na=False,
     )
@@ -172,7 +149,7 @@ def dataset(split: str, chain: str, representation: str = "sceptr") -> pd.DataFr
             representations[
                 [
                     "subject_id",
-                    "legacy_patient_id",
+                    "source_patient_id",
                     "embedding_file",
                     "tcr_count",
                     "embedding_dim",
@@ -223,7 +200,7 @@ def load_features(frame: pd.DataFrame) -> dict[str, dict]:
 def patient_vectors(
     frame: pd.DataFrame,
     features: dict[str, dict],
-    method: core.Method,
+    method: methods.Method,
     device: torch.device,
 ) -> dict[str, torch.Tensor]:
     return {
@@ -237,13 +214,13 @@ def patient_vectors(
     }
 
 
-def checkpoint(spec: StudySpec, method: core.Method, chain: str, seed_id: str, fold: int) -> Path:
-    return core.checkpoint(method, chain, seed_id, fold, spec.checkpoints)
+def checkpoint(spec: _Study, method: methods.Method, chain: str, seed_id: str, fold: int) -> Path:
+    return methods.checkpoint_path(spec.checkpoints, method, chain, seed_id, fold)
 
 
 def checkpoint_metadata(
-    spec: StudySpec,
-    method: core.Method,
+    spec: _Study,
+    method: methods.Method,
     chain: str,
     seed_id: str,
     fold: int,
@@ -255,18 +232,18 @@ def checkpoint_metadata(
         "seed_id": seed_id,
         "seed_value": str(protocol.SEED_REGISTRY[seed_id]["value"]),
         "fold": fold,
-        "epochs": core.EPOCHS,
+        "epochs": methods.EPOCHS,
     }
-    if spec.checkpoint_schema in {"hard_gate", "future_work"}:
+    if spec is not _NO_HARD_GATE:
         metadata.update(
             representation=method.representation,
             dimensions=method.dimensions,
         )
-    if spec.checkpoint_schema == "hard_gate":
+    if spec is _MAIN:
         metadata.update(
             metric_interval=learning_curves.METRIC_INTERVAL,
-            learning_rate=core.LEARNING_RATE,
-            accumulation=core.ACCUMULATION,
+            learning_rate=methods.LEARNING_RATE,
+            accumulation=methods.ACCUMULATION,
             shuffle_seed=protocol.FOLD_SEED,
             hard_threshold=float(method.threshold),
             pooling_normalisation=method.norm,
@@ -274,24 +251,24 @@ def checkpoint_metadata(
             classifier_hidden_dimensions=32 if method.head == "mlp" else 0,
             classifier_dropout=0.2 if method.head == "mlp" else 0.0,
         )
-    elif spec.checkpoint_schema == "no_gate":
+    elif spec is _NO_HARD_GATE:
         metadata.update(
             metric_interval=learning_curves.METRIC_INTERVAL,
-            learning_rate=core.LEARNING_RATE,
-            accumulation=core.ACCUMULATION,
+            learning_rate=methods.LEARNING_RATE,
+            accumulation=methods.ACCUMULATION,
             shuffle_seed=protocol.FOLD_SEED,
             pooling_normalisation=method.norm,
             classifier_head=method.head,
             evidence_mapping="unchanged_raw_alice_evidence",
             hard_threshold="none",
-            training_loop=f"per_patient_gradient_accumulation_{core.ACCUMULATION}",
+            training_loop=f"per_patient_gradient_accumulation_{methods.ACCUMULATION}",
         )
     return metadata
 
 
 def bound_checkpoint_contract(
-    spec: StudySpec,
-    method: core.Method,
+    spec: _Study,
+    method: methods.Method,
     chain: str,
     seed_id: str,
     fold: int,
@@ -304,8 +281,8 @@ def bound_checkpoint_contract(
 
 
 def load_checkpoint(
-    spec: StudySpec,
-    method: core.Method,
+    spec: _Study,
+    method: methods.Method,
     chain: str,
     seed_id: str,
     fold: int,
@@ -323,9 +300,9 @@ def load_checkpoint(
 
 
 def save_checkpoint(
-    spec: StudySpec,
+    spec: _Study,
     model: torch.nn.Module,
-    method: core.Method,
+    method: methods.Method,
     chain: str,
     seed_id: str,
     fold: int,
@@ -342,8 +319,8 @@ def save_checkpoint(
 
 
 def training_history_identity(
-    spec: StudySpec,
-    method: core.Method,
+    spec: _Study,
+    method: methods.Method,
     chain: str,
     seed_id: str,
     fold: int,
@@ -360,8 +337,8 @@ def training_history_identity(
 
 
 def load_or_fit(
-    spec: StudySpec,
-    method: core.Method,
+    spec: _Study,
+    method: methods.Method,
     chain: str,
     seed_id: str,
     fold: int,
@@ -384,7 +361,7 @@ def load_or_fit(
         not spec.record_history
         or learning_curves.history_is_complete(
             history_path,
-            core.EPOCHS,
+            methods.EPOCHS,
             identity,
             path,
             contract,
@@ -400,9 +377,9 @@ def load_or_fit(
         model.classifier,
         train.to_dict("records"),
         vectors,
-        epochs=core.EPOCHS,
-        learning_rate=core.LEARNING_RATE,
-        accumulation=core.ACCUMULATION,
+        epochs=methods.EPOCHS,
+        learning_rate=methods.LEARNING_RATE,
+        accumulation=methods.ACCUMULATION,
         shuffle_seed=protocol.FOLD_SEED,
         held_out_rows=held_out.to_dict("records") if spec.record_history else None,
         metric_interval=learning_curves.METRIC_INTERVAL,
@@ -433,8 +410,8 @@ def scores(
 
 
 def prediction_row(
-    spec: StudySpec,
-    method: core.Method,
+    spec: _Study,
+    method: methods.Method,
     chain: str,
     seed_id: str,
     fold: int,
@@ -461,7 +438,7 @@ def prediction_row(
     }
 
 
-def learning_history_jobs(spec: StudySpec) -> list[dict]:
+def learning_history_jobs(spec: _Study) -> list[dict]:
     return [
         training_history_identity(spec, method, chain, seed_id, fold)
         | {
@@ -481,32 +458,43 @@ def learning_history_jobs(spec: StudySpec) -> list[dict]:
     ]
 
 
-def aggregate_learning_history(spec: StudySpec) -> pd.DataFrame:
+def aggregate_learning_history(spec: _Study) -> pd.DataFrame:
     history = learning_curves.collect_fold_histories(
         spec.run_artifacts,
         learning_history_jobs(spec),
-        core.EPOCHS,
+        methods.EPOCHS,
     )
-    protocol.atomic_csv(history, spec.run_artifacts / "training_metrics.csv")
-    return history
+    aggregate = spec.run_artifacts / "training_metrics.csv"
+    if not aggregate.exists():
+        protocol.atomic_csv(history, aggregate)
+        return history
+    recorded = pd.read_csv(aggregate, dtype={"seed_value": str})
+    order = ["method_id", "chain", "seed_id", "fold", "epoch"]
+    pd.testing.assert_frame_equal(
+        recorded.sort_values(order).reset_index(drop=True),
+        history.sort_values(order).reset_index(drop=True),
+        check_dtype=False,
+        obj=f"{spec.experiment_id} aggregate and per-fold histories",
+    )
+    return recorded
 
 
 def verify_future_work_checkpoint_freeze() -> None:
     freeze = json.loads(protocol.ALICE_FREEZE.read_text(encoding="utf-8"))
     entry = freeze.get("future_work", {}).get("representation_dependence")
-    if not isinstance(entry, dict) or entry.get("status") != "preliminary_partial":
-        raise ValueError("Missing preliminary representation-dependence freeze contract")
-    expected_ids = [method.method_id for method in FUTURE_WORK_METHODS]
+    if not isinstance(entry, dict):
+        raise ValueError("Missing representation-dependence freeze contract")
+    expected_ids = [method.method_id for method in methods.REPRESENTATION_METHODS]
     if entry.get("checkpoint_method_ids") != expected_ids:
         raise ValueError("Future-work checkpoint method registry differs from the freeze")
     checkpoints = [
         path
         for method_id in expected_ids
-        for path in (core.CHECKPOINTS / method_id).rglob("*.pt")
+        for path in (methods.CHECKPOINTS / method_id).rglob("*.pt")
     ]
     expected_count = sum(
         len(method.chains) * len(method.seed_ids) * 5
-        for method in FUTURE_WORK_METHODS
+        for method in methods.REPRESENTATION_METHODS
     )
     if len(checkpoints) != expected_count or int(entry.get("checkpoint_count", -1)) != expected_count:
         raise ValueError("Future-work checkpoint coverage differs from the 120-model contract")
@@ -514,7 +502,7 @@ def verify_future_work_checkpoint_freeze() -> None:
         raise ValueError("Future-work checkpoint content differs from the freeze")
 
 
-def _verify_inputs(spec: StudySpec, split: str, *, internal_stage: bool) -> None:
+def _verify_inputs(spec: _Study, split: str, *, internal_stage: bool) -> None:
     extra = (
         (f"representation_comparison_{split}",)
         if any(method.representation != "sceptr" for method in spec.methods)
@@ -526,14 +514,14 @@ def _verify_inputs(spec: StudySpec, split: str, *, internal_stage: bool) -> None
         extra,
         verify_checkpoints=(
             spec.verify_main_checkpoints
-            and not (spec is HARD_GATE_STUDY and internal_stage)
+            and not (spec is _MAIN and internal_stage)
         ),
     )
-    if spec is FUTURE_WORK_STUDY and not internal_stage:
+    if spec is _REPRESENTATION and not internal_stage:
         verify_future_work_checkpoint_freeze()
 
 
-def internal(spec: StudySpec, device: torch.device) -> pd.DataFrame:
+def _run_internal(spec: _Study, device: torch.device) -> pd.DataFrame:
     _verify_inputs(spec, "internal", internal_stage=True)
     result: list[dict] = []
     cache: dict[tuple[str, str], tuple[pd.DataFrame, dict[str, dict]]] = {}
@@ -597,7 +585,7 @@ def internal(spec: StudySpec, device: torch.device) -> pd.DataFrame:
                             not spec.record_history
                             or learning_curves.history_is_complete(
                                 history_path,
-                                core.EPOCHS,
+                                methods.EPOCHS,
                                 identity,
                                 path,
                                 contract,
@@ -634,7 +622,7 @@ def internal(spec: StudySpec, device: torch.device) -> pd.DataFrame:
     protocol.atomic_csv(predictions, spec.run_artifacts / "internal_predictions.csv")
     if spec.record_history:
         aggregate_learning_history(spec)
-    if spec is HARD_GATE_STUDY:
+    if spec is _MAIN:
         from analysis.experiment_04_alice_model.prepare import write_runtime_freeze
 
         write_runtime_freeze(
@@ -642,7 +630,7 @@ def internal(spec: StudySpec, device: torch.device) -> pd.DataFrame:
             require_core_checkpoints=True,
             require_future_checkpoints=False,
         )
-    elif spec is FUTURE_WORK_STUDY:
+    elif spec is _REPRESENTATION:
         from analysis.experiment_04_alice_model.prepare import write_runtime_freeze
 
         write_runtime_freeze(
@@ -658,7 +646,7 @@ def internal(spec: StudySpec, device: torch.device) -> pd.DataFrame:
     return predictions
 
 
-def validation(spec: StudySpec, device: torch.device) -> pd.DataFrame:
+def _run_validation(spec: _Study, device: torch.device) -> pd.DataFrame:
     _verify_inputs(spec, "internal", internal_stage=False)
     _verify_inputs(spec, "external", internal_stage=False)
     missing = [
@@ -746,8 +734,61 @@ def validation(spec: StudySpec, device: torch.device) -> pd.DataFrame:
     return predictions
 
 
+def guard_main_cache(states: tuple[Path, ...]) -> None:
+    _guard_internal_cache(_MAIN, states)
+
+
+def guard_no_hard_gate_cache(states: tuple[Path, ...]) -> None:
+    _guard_internal_cache(_NO_HARD_GATE, states)
+
+
+def guard_representation_cache(states: tuple[Path, ...]) -> None:
+    _guard_internal_cache(_REPRESENTATION, states)
+
+
+def run_hard_gate(device: torch.device) -> pd.DataFrame:
+    return _run_internal(_MAIN, device)
+
+
+def validate_hard_gate(device: torch.device) -> pd.DataFrame:
+    return _run_validation(_MAIN, device)
+
+
+def run_no_hard_gate(device: torch.device) -> pd.DataFrame:
+    return _run_internal(_NO_HARD_GATE, device)
+
+
+def validate_no_hard_gate(device: torch.device) -> pd.DataFrame:
+    return _run_validation(_NO_HARD_GATE, device)
+
+
+def run_representation_comparison(device: torch.device) -> pd.DataFrame:
+    return _run_internal(_REPRESENTATION, device)
+
+
+def validate_representation_comparison(device: torch.device) -> pd.DataFrame:
+    return _run_validation(_REPRESENTATION, device)
+
+
+def main_checkpoint_metadata(
+    method: methods.Method,
+    chain: str,
+    seed_id: str,
+    fold: int,
+) -> dict:
+    return checkpoint_metadata(_MAIN, method, chain, seed_id, fold)
+
+
+def main_learning_history() -> pd.DataFrame:
+    return aggregate_learning_history(_MAIN)
+
+
+def no_hard_gate_learning_history() -> pd.DataFrame:
+    return aggregate_learning_history(_NO_HARD_GATE)
+
+
 def self_test() -> None:
-    if len(FUTURE_WORK_METHODS) != 8:
+    if len(methods.REPRESENTATION_METHODS) != 8:
         raise AssertionError("Expected eight preliminary representation methods")
-    if any(method.chains != ("alpha",) for method in FUTURE_WORK_METHODS):
+    if any(method.chains != ("alpha",) for method in methods.REPRESENTATION_METHODS):
         raise AssertionError("Representation dependence is an Alpha-only partial study")

@@ -1,101 +1,85 @@
 # TCR repertoire classification with ALICE-informed pooling
 
-This repository contains four experiments for patient-level cancer
-classification from T-cell receptor (TCR) repertoires.
+This repository contains four patient-level cancer-classification experiments
+using T-cell receptor (TCR) repertoires.
 
-| Experiment | Data boundary | Question |
-|---|---|---|
-| `experiment_01_internal_baseline` | Internal cohorts | Which per-sequence representation should be carried forward? |
-| `experiment_02_seed_and_attention_normalisation` | Internal cohorts | Where does seed sensitivity arise, and how do attention normalisers differ? |
-| `experiment_03_external_generalisation` | Frozen external transfer | Do internally successful models transfer to cohorts from different sources? |
-| `experiment_04_alice_model` | Internal training and frozen external transfer | Can ALICE-informed pooling improve transfer? |
+| Experiment | Main question |
+|---|---|
+| 1. Internal baseline | Which TCR representation should be used? |
+| 2. Seeds and attention | How do layer seeds and attention normalisers affect performance? |
+| 3. External transfer | Do the frozen Experiment 2 models transfer to different cohorts? |
+| 4. ALICE pooling | Does ALICE-informed pooling improve transfer? |
 
-The common analysis path is:
-
-```text
-raw AIRR repertoires
-  -> standardised patient-chain TCR tables
-  -> frozen per-sequence representations
-  -> attention or ALICE-informed patient pooling
-  -> Linear / MLP classifier
-  -> patient-level five-fold OOF evaluation
-  -> frozen external transfer stress test
-```
-
-## Scientific boundary
-
-- Internal evaluation uses 111 non-cancer controls and 58 lung-cancer
-  patients. Each patient has one held-out prediction under
-  `fivefold_seed913271`.
-- The external stress test contains 73 Alpha and 74 Beta BCG/TCV controls and
-  36 additional TRACERx PBMC cancer patients. Subject sets do not overlap.
-- Each external score is the mean prediction from five frozen fold models.
-  External data are not used to select methods, seeds, epochs or thresholds.
-- Source and label are confounded in the external cohorts. External results
-  measure cohort transfer and are not independent evidence of a cancer-causal
-  biomarker.
-- `tx421_cancer` is a stable code alias for the 36 additional TRACERx PBMC
-  patients outside the internal TRACERx100 subset; it is not a claim that the
-  files belong to the published TRACERx421 cohort.
-- ALICE L1 and L2 are pooling normalisations, not regularisers. L2 retains
-  information about effective selected-TCR count through vector magnitude.
-
-## Repository layout
+The main data path is:
 
 ```text
-data/raw/                    local source repertoires (not committed)
-artifacts/manifests/         subject, sample, representation and fold identities
-artifacts/tcr_tables/        standardised patient-chain TCR tables
-artifacts/representations/   per-sequence tensors
-artifacts/alice/             ALICE p/q/D outputs, evidence and sequence maps
-artifacts/checkpoints/       fold models and training histories
-artifacts/runs/              patient predictions and detailed run artifacts
-third_party/alice/           pinned TCRgrapher, OLGA models and Windows adapter
-third_party/vdjdb/           fixed VDJdb snapshot used by family lookup
-pipeline/                    preparation, embedding, manifests and provenance
-analysis/                    experiment methods, studies, runners and reports
-results/                     aggregate tables and publication figures
+raw AIRR tables -> patient TCR tables -> TCR embeddings
+-> patient vectors -> fold models -> patient predictions -> reports
 ```
 
-Shared analysis code has three responsibilities:
+## Two ways to run the project
 
-- `analysis/protocol.py`: paths, schemas, seeds, manifests, hashes and atomic
-  writes;
-- `analysis/training.py`: training, prediction, checkpoints and histories;
-- `analysis/reporting.py`: metrics, plotting conventions and result checks.
+Every experiment runner supports `--input-mode raw` and
+`--input-mode cached`. The default is `raw`.
 
-Each experiment has one command-line entry point, `run.py`. Model definitions
-remain in `methods.py`, experiment computations in `study.py` or a named study
-module, and figure/table generation in `report.py`. The full module and stage
-map is in `analysis/README.md`.
+### Full run from raw data
+
+This path performs preparation, embedding, training, validation and report
+generation. Run the experiments in order:
+
+```powershell
+python -m analysis.experiment_01_internal_baseline.run --input-mode raw
+python -m analysis.experiment_02_seed_and_attention_normalisation.run --input-mode raw
+python -m analysis.experiment_03_external_generalisation.run --input-mode raw
+python -m analysis.experiment_04_alice_model.run --input-mode raw
+```
+
+Experiments 1 and 2 use internal data only. Experiment 3 reuses the frozen
+Experiment 2 checkpoints. Experiment 4 prepares ALICE evidence before fitting
+its patient-level classifiers.
+
+### Rebuild reports from the published cache
+
+The optional report cache contains checkpoints, training histories,
+patient-level predictions and the small intermediate tables needed by the
+reports. It does not contain raw repertoires, patient TCR tables, embeddings or
+per-TCR ALICE output.
+
+1. Download the ZIP listed in [ARTIFACTS.md](ARTIFACTS.md).
+2. Extract it into the repository root without changing its directory layout.
+3. Verify it:
+
+```powershell
+python -m pipeline.verify_report_cache
+```
+
+4. Rebuild the reports:
+
+```powershell
+python -m analysis.experiment_01_internal_baseline.run --input-mode cached
+python -m analysis.experiment_02_seed_and_attention_normalisation.run --input-mode cached
+python -m analysis.experiment_03_external_generalisation.run --input-mode cached
+python -m analysis.experiment_04_alice_model.run --input-mode cached
+```
+
+Cached mode never prepares raw data or trains models. Training stages such as
+`internal`, `prepare` and `validation` are rejected in cached mode.
 
 ## Environment
 
-The supported environment is Windows 11, 64-bit CPython 3.12, an NVIDIA GPU
-compatible with CUDA 12.8, and native 64-bit R 4.3.3.
-
-Create the Python environment from the repository root:
+The tested setup is 64-bit CPython 3.12 on Windows 11. The full raw workflow
+uses an NVIDIA CUDA 12.8 build of PyTorch and R 4.3.3 for ALICE.
 
 ```powershell
 py -3.12 -m venv .venv
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install "setuptools>=68,<82"
 python -m pip install -r requirements-cuda.txt
 python -m pip install -e . --no-deps
 ```
 
-`requirements-cuda.txt` pins the CUDA 12.8 PyTorch wheel. Verify the runtime
-before a full run:
-
-```powershell
-python -c "import sys, torch; print(sys.version); print(torch.__version__, torch.version.cuda, torch.cuda.get_device_name()); assert sys.version_info[:2] == (3, 12) and torch.cuda.is_available()"
-```
-
-Install R 4.3.3 at `C:\Program Files\R\R-4.3.3` and Rtools43 at
-`C:\rtools43`. Then install the ALICE runtime dependencies and the pinned
-TCRgrapher source:
+Install the ALICE R dependencies and the included TCRgrapher source:
 
 ```powershell
 $rscript = 'C:\Program Files\R\R-4.3.3\bin\Rscript.exe'
@@ -103,95 +87,78 @@ $r = 'C:\Program Files\R\R-4.3.3\bin\R.exe'
 & $rscript -e "install.packages('remotes', repos='https://cloud.r-project.org')"
 & $rscript -e "remotes::install_version('data.table', version='1.17.8', repos='https://cloud.r-project.org'); remotes::install_version('stringdist', version='0.9.15', repos='https://cloud.r-project.org'); remotes::install_version('iterators', version='1.0.14', repos='https://cloud.r-project.org'); remotes::install_version('foreach', version='1.5.2', repos='https://cloud.r-project.org'); remotes::install_version('doParallel', version='1.0.17', repos='https://cloud.r-project.org')"
 & $r CMD INSTALL third_party\alice\tcrgrapher
-& $rscript -e "library(tcrgrapher); library(data.table); cat('ALICE R runtime ready\n')"
 ```
 
-The Experiment 4 runner discovers this standard Windows installation when R
-is not on `PATH`. A different installation can be selected with `--rscript`.
+Use `--rscript` if R is installed elsewhere.
 
-## Data placement
+## Raw data
 
-Raw patient data are excluded from Git. Extract approved cohorts without
-renaming subject or chain files:
+Raw repertoires are not included in Git or in the report cache. Place approved
+inputs under:
 
 ```text
 data/raw/
   internal/control/{alpha,beta}/
   internal/cancer/{alpha,beta}/
   external/bcg_control/{alpha,beta}/
-  external/tx421_cancer/{alpha,beta}/
+  external/additional_tracerx_cancer/{alpha,beta}/
 ```
 
-`data/README.md` documents the expected files. The preparation pipeline writes
-patient identities and repository-relative source paths to
-`artifacts/manifests/`; training does not infer labels from filenames.
+See [data/README.md](data/README.md) for the expected cohorts. Subject IDs and
+CDR3 sequences in the published manifests and report cache come from approved
+public data sources; they are study identifiers rather than direct personal
+identifiers.
 
-## Running the experiments
+## Repository layout
 
-Install the project in editable mode, run from the repository root, and keep
-the scientific order:
+```text
+analysis/       models, experiment computations and reports
+pipeline/       manifest building, data preparation, embeddings and cache checks
+tests/          portable tests and optional cached-result checks
+results/        aggregate CSV files and publication figures
+third_party/    pinned ALICE/OLGA code and the derived VDJdb snapshot
+tools/          release utility for building the optional report cache
+```
+
+Inside each experiment, `methods.py` contains the model definitions,
+`study.py` or a clearly named study module contains the computation, and
+`report.py` creates figures and aggregate tables. `run.py` is the only command
+line entry point. See [analysis/README.md](analysis/README.md) for the stage
+map.
+
+Run portable tests with:
 
 ```powershell
-python -m analysis.experiment_01_internal_baseline.run
-python -m analysis.experiment_02_seed_and_attention_normalisation.run
-python -m analysis.experiment_03_external_generalisation.run
-python -m analysis.experiment_04_alice_model.run
+python -m unittest discover -s tests -v
 ```
 
-`--stage all` is the default. Experiments 01 and 02 never prepare or read the
-external cohorts. Experiment 03 requires the frozen Experiment 02 models.
+Set `TCR_REQUIRE_REPORT_CACHE=1` to make absence of the optional cache a test
+failure instead of a skip.
 
-| Stage boundary | Meaning |
-|---|---|
-| `all` | Results used by the four main experiments |
-| `diagnostics` | Standard training diagnostics; Experiment 02 includes the optional 300-epoch selected-seed trajectory |
-| `future-work` | Preliminary Experiment 04 representation-dependence and gate-free PCA analyses |
-| `self-test` | Fast installation and contract checks without training |
+## Evaluation boundary
 
-Focused recovery stages such as `prepare`, `internal`, `report`, `assemble`,
-`geometry`, `freeze` and `validation` are available through the same four
-runners. Implementation modules are not standalone commands.
-
-Typical full runtimes on the development workstation (Windows 11, RTX 3060)
-are planning estimates:
-
-| Experiment | From required raw inputs | Valid-cache `all` |
-|---|---:|---:|
-| Experiment 1 | 1.7--2.3 h | 5--15 min |
-| Experiment 2 | 2.4--3.3 h | 15--35 min |
-| Experiment 3 | 0.5--1.0 h after Experiment 2 | 10--30 min |
-| Experiment 4 | 13--18 h | 30--90 min |
-
-## Artifacts and provenance
-
-`artifacts/` contains reproducibility state, including prepared patient-level
-data, representations, checkpoints, predictions and provenance bindings.
-`results/` contains aggregate tables and publication figures. Large or
-patient-level artifacts should remain local even when publishing the code.
-
-Runners verify recorded input hashes, parameters and upstream bindings before
-reusing cached products. A mismatched dependency is rebuilt from the nearest
-valid upstream artifact; incompatible downstream products are moved to
-`backup/stale_cache/`. Transfer an artifact together with its matching records
-under `artifacts/provenance/`.
+- Internal evaluation uses one held-out prediction per patient from the fixed
+  five-fold split `fivefold_seed913271`.
+- Each external score is the mean of five frozen fold predictions.
+- External data are not used to select methods, seeds, epochs or thresholds.
+- Source and label are confounded in the external cohorts. External results
+  therefore measure cohort transfer, not a cancer-causal biomarker.
+- ALICE L1 and L2 refer to pooling normalisation, not weight regularisation.
+- Training sums four class-weighted patient losses before each optimiser
+  update; it does not average those four losses.
 
 ## References
 
-- Pogorelyy MV, Minervina AA, Shugay M, et al. Detecting T cell receptors
-  involved in immune responses from single repertoire snapshots. *PLOS
-  Biology*. 2019;17:e3000314. https://doi.org/10.1371/journal.pbio.3000314
-- Nagano Y, Pyo AGT, Milighetti M, et al. Contrastive learning of T cell
-  receptor representations. *Cell Systems*. 2025;16:101165.
+- Pogorelyy MV, Minervina AA, Shugay M, et al. ALICE. *PLOS Biology* 2019.
+  https://doi.org/10.1371/journal.pbio.3000314
+- Nagano Y, Pyo AGT, Milighetti M, et al. SCEPTR. *Cell Systems* 2025.
   https://doi.org/10.1016/j.cels.2024.12.006
-- Sethna Z, Elhanati Y, Callan CG Jr, et al. OLGA: fast computation of
-  generation probabilities of B- and T-cell receptor amino acid sequences and
-  motifs. *Bioinformatics*. 2019;35:2974--2981.
+- Sethna Z, Elhanati Y, Callan CG Jr, et al. OLGA. *Bioinformatics* 2019.
   https://doi.org/10.1093/bioinformatics/btz035
-- Shugay M, Bagaev DV, Zvyagin IV, et al. VDJdb: a curated database of T-cell
-  receptor sequences with known antigen specificity. *Nucleic Acids
-  Research*. 2018;46:D419--D427. https://doi.org/10.1093/nar/gkx760
+- Shugay M, Bagaev DV, Zvyagin IV, et al. VDJdb. *Nucleic Acids Research*
+  2018. https://doi.org/10.1093/nar/gkx760
 
 ## License
 
-Project-owned code is released under the MIT License. Components in
-`third_party/` retain their original licenses.
+Project-owned code is released under the MIT License. Files in `third_party/`
+retain their original licences.

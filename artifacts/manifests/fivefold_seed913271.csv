@@ -1,4 +1,4 @@
-split_id,seed,fold,subject_id,legacy_patient_id,chain,label,role
+split_id,seed,fold,subject_id,source_patient_id,chain,label,role
 fivefold_seed913271,913271,0,LTX0031,LTX0031_positive_alpha,alpha,1,internal
 fivefold_seed913271,913271,0,LTX0033,LTX0033_positive_alpha,alpha,1,internal
 fivefold_seed913271,913271,0,LTX0041,LTX0041_positive_alpha,alpha,1,internal

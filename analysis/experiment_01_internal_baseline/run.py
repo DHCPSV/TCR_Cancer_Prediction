@@ -11,7 +11,7 @@ if __package__ in (None, ""):
 
 from analysis import protocol, training
 from analysis.experiment_01_internal_baseline import prepare, report, study
-from pipeline import workflow
+from pipeline import report_cache, workflow
 
 
 def _ready() -> None:
@@ -19,7 +19,7 @@ def _ready() -> None:
     descriptors = prepare.ensure("internal", upstream)
     workflow.guard_consumer(
         study.EXPERIMENT_ID,
-        (study.CHECKPOINTS, study.RUN_ARTIFACTS, study.RESULTS),
+        (study.CHECKPOINTS, study.RUN_ARTIFACTS),
         (upstream.path, descriptors),
     )
 
@@ -32,7 +32,21 @@ def main(argv: list[str] | None = None) -> None:
         default="all",
     )
     parser.add_argument("--device", choices=("auto", "cpu", "cuda"), default="cuda")
+    parser.add_argument("--input-mode", choices=("raw", "cached"), default="raw")
     args = parser.parse_args(argv)
+
+    if args.input_mode == "cached":
+        if args.stage == "internal":
+            parser.error("cached mode contains report inputs, not training inputs")
+        report_cache.verify()
+        if args.stage in {"self-test", "all"}:
+            prepare.self_test()
+            study.self_test()
+        if args.stage in {"report", "all"}:
+            report.main()
+        if args.stage in {"diagnostics", "all"}:
+            report.diagnostics()
+        return
 
     if args.stage in {"internal", "all"}:
         _ready()

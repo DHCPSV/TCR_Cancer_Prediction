@@ -1,7 +1,8 @@
 # Fixed VDJdb lookup
 
-The formal family lookup uses the fixed VDJdb `2026-05-16` release. Git retains
-only the files required to reproduce and license that lookup:
+The family lookup uses the fixed VDJdb `2026-05-16` release. Git retains a
+derived table containing only the TRA/HomoSapiens rows and columns that can
+match the patient-local families analysed in this project:
 
 ```text
 2026-05-16/release/vdjdb-2026-05-16/
@@ -10,10 +11,10 @@ only the files required to reproduce and license that lookup:
   vdjdb.slim.txt
 ```
 
-`source.csv` records the release URL and SHA-256 hashes. The lookup verifies
-the slim table hash before reading it. The release archive, full tables, HTML,
-motifs and clustering files are reproducible upstream assets and remain
-ignored because they are not read by the formal analysis.
+`source.csv` records the release URL, the source and derived SHA-256 hashes,
+and the derived row count. The lookup verifies the derived table before
+reading it. The release archive and full tables remain available upstream and
+are not required to reproduce this lookup.
 
 Changing the snapshot requires updating the release constant in
 `analysis/experiment_04_alice_model/vdjdb_lookup.py` and the corresponding

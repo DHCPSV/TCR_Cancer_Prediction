@@ -14,7 +14,8 @@ import pandas as pd
 import torch
 
 from analysis import protocol, training
-from analysis.experiment_01_internal_baseline.methods import METHODS, SparsemaxAttentionMIL
+from analysis.attention_mil import AttentionMIL
+from analysis.experiment_01_internal_baseline.methods import METHODS
 
 
 EXPERIMENT_ID = "experiment_01_internal_baseline"
@@ -241,9 +242,9 @@ def read_history(
         return None
 
 
-def build_model(embedding_dim: int, seed: int, device: torch.device) -> SparsemaxAttentionMIL:
+def build_model(embedding_dim: int, seed: int, device: torch.device) -> AttentionMIL:
     training.set_seed(seed)
-    return SparsemaxAttentionMIL(embedding_dim).to(device)
+    return AttentionMIL("sparsemax", embedding_dim).to(device)
 
 
 def save_checkpoint(
@@ -412,7 +413,7 @@ def internal(device: torch.device) -> pd.DataFrame:
 def self_test() -> None:
     for _, _, _, embedding_dim in METHODS:
         training.set_seed(17)
-        model = SparsemaxAttentionMIL(embedding_dim)
+        model = AttentionMIL("sparsemax", embedding_dim)
         values = torch.randn(13, embedding_dim)
         weights = model.attention_weights(values)
         assert tuple(weights.shape) == (13, 1)

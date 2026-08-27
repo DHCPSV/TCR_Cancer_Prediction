@@ -32,7 +32,6 @@ FREEZE = protocol.MANIFESTS / "alice_runtime_freeze.json"
 EXPERIMENT_ID = "experiment_04_alice_model"
 MODEL_CODE_FILES = (
     "analysis/training.py",
-    "analysis/experiment_04_alice_model/core.py",
     "analysis/experiment_04_alice_model/methods.py",
     "analysis/experiment_04_alice_model/prepare.py",
     "analysis/experiment_04_alice_model/study.py",
@@ -46,7 +45,6 @@ ANALYSIS_CODE_FILES = (
     "analysis/experiment_04_alice_model/run.py",
     "analysis/experiment_04_alice_model/families.py",
     "analysis/experiment_04_alice_model/vdjdb_lookup.py",
-    "analysis/experiment_04_alice_model/no_hard_gate.py",
     "analysis/experiment_04_alice_model/gate_free_pca.py",
 )
 
@@ -211,7 +209,7 @@ def build_inputs(split: str) -> pd.DataFrame:
                     "role": split,
                     "chain": chain,
                     "subject_id": subject_id,
-                    "legacy_patient_id": representation["legacy_patient_id"],
+                    "source_patient_id": representation["source_patient_id"],
                     "label": representation["label"],
                     "cohort": representation["cohort"],
                     "sample_index": index,
@@ -343,7 +341,7 @@ def build_evidence(split: str) -> pd.DataFrame:
                 "role": split,
                 "chain": chain,
                 "subject_id": subject_id,
-                "legacy_patient_id": subject["legacy_patient_id"],
+                "source_patient_id": subject["source_patient_id"],
                 "label": int(subject["label"]),
                 "cohort": subject["cohort"],
                 "evidence_file": evidence_path.relative_to(protocol.REPO).as_posix(),
@@ -411,14 +409,14 @@ def write_runtime_freeze(
     require_core_checkpoints: bool = True,
     require_future_checkpoints: bool = True,
 ) -> dict:
-    from analysis.experiment_04_alice_model import core, study
+    from analysis.experiment_04_alice_model import methods
 
     payload = {"schema_version": 2, "experiments": {}, "files": {}}
     if FREEZE.exists():
         payload = json.loads(FREEZE.read_text(encoding="utf-8"))
     payload["schema_version"] = 2
     checkpoint_root = protocol.REPO / "artifacts" / "checkpoints" / EXPERIMENT_ID
-    checkpoint_method_ids = [method.method_id for method in core.METHODS]
+    checkpoint_method_ids = [method.method_id for method in methods.MAIN_METHODS]
     checkpoints = [
         path
         for method_id in checkpoint_method_ids
@@ -426,7 +424,7 @@ def write_runtime_freeze(
     ]
     expected_core_count = sum(
         len(method.chains) * len(method.seed_ids) * 5
-        for method in core.METHODS
+        for method in methods.MAIN_METHODS
     )
     if require_core_checkpoints and len(checkpoints) != expected_core_count:
         raise ValueError(
@@ -446,7 +444,9 @@ def write_runtime_freeze(
             for relative in ANALYSIS_CODE_FILES
         },
     }
-    future_method_ids = [method.method_id for method in study.FUTURE_WORK_METHODS]
+    future_method_ids = [
+        method.method_id for method in methods.REPRESENTATION_METHODS
+    ]
     future_checkpoints = [
         path
         for method_id in future_method_ids
@@ -454,7 +454,7 @@ def write_runtime_freeze(
     ]
     expected_future_count = sum(
         len(method.chains) * len(method.seed_ids) * 5
-        for method in study.FUTURE_WORK_METHODS
+        for method in methods.REPRESENTATION_METHODS
     )
     if require_future_checkpoints and len(future_checkpoints) != expected_future_count:
         raise ValueError(
@@ -462,16 +462,33 @@ def write_runtime_freeze(
             f"{len(future_checkpoints)}, expected {expected_future_count}"
         )
     payload.setdefault("future_work", {})["representation_dependence"] = {
-        "status": (
-            "preliminary_partial"
-            if len(future_checkpoints) == expected_future_count
-            else "pending"
-        ),
         "checkpoint_root": checkpoint_root.relative_to(protocol.REPO).as_posix(),
         "checkpoint_method_ids": future_method_ids,
         "expected_checkpoint_count": expected_future_count,
         "checkpoint_count": len(future_checkpoints),
         "checkpoint_digest": protocol.file_set_digest(future_checkpoints),
+    }
+    no_hard_gate_checkpoints = list(
+        methods.NO_HARD_GATE_CHECKPOINTS.rglob("*.pt")
+    )
+    expected_no_hard_gate_count = sum(
+        len(method.chains) * len(method.seed_ids) * 5
+        for method in methods.NO_HARD_GATE_METHODS
+    )
+    if require_core_checkpoints and len(no_hard_gate_checkpoints) != expected_no_hard_gate_count:
+        raise ValueError(
+            "No-hard-gate checkpoint coverage is "
+            f"{len(no_hard_gate_checkpoints)}, expected {expected_no_hard_gate_count}"
+        )
+    payload.setdefault("experiments", {})[
+        "experiment_04_alice_model_no_hard_gate"
+    ] = {
+        "checkpoint_method_ids": [
+            method.method_id for method in methods.NO_HARD_GATE_METHODS
+        ],
+        "expected_checkpoint_count": expected_no_hard_gate_count,
+        "checkpoint_count": len(no_hard_gate_checkpoints),
+        "checkpoint_digest": protocol.file_set_digest(no_hard_gate_checkpoints),
     }
     files = payload.setdefault("files", {})
     shared = ("artifacts/manifests/fivefold_seed913271.csv",)

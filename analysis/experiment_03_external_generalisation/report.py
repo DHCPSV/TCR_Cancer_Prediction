@@ -26,7 +26,7 @@ GROUP_STYLE = {
     "internal_control": ("Internal control", "#4C78A8", "o"),
     "internal_cancer": ("Internal cancer", "#E45756", "o"),
     "bcg_control": ("BCG control", "#72B7B2", "^"),
-    "tx421_cancer": ("Additional TRACERx PBMC cancer", "#F2A104", "^"),
+    "additional_tracerx_cancer": ("Additional TRACERx PBMC cancer", "#F2A104", "^"),
 }
 TRANSFER_EXAMPLES = (
     ("Internal separation,\nexternal collapse", "Softmax", "S03"),
@@ -138,9 +138,9 @@ def generate_transfer() -> pd.DataFrame:
     return metrics
 
 
-def load_seed_geometry() -> pd.DataFrame:
+def load_seed_pca() -> pd.DataFrame:
     points = pd.read_csv(
-        study.GEOMETRY / "per_seed_patient_coordinates.csv",
+        study.PCA / "per_seed_patient_coordinates.csv",
         dtype={"seed_value": str},
     )
     expected = {
@@ -167,7 +167,7 @@ def load_seed_geometry() -> pd.DataFrame:
         )
         if len(part) != expected_count or part["subject_id"].nunique() != expected_count:
             raise ValueError(
-                f"Incomplete seed geometry: {model}/{chain}/{seed_id}/{dataset}"
+                f"Incomplete seed PCA: {model}/{chain}/{seed_id}/{dataset}"
             )
     required = {
         "logit",
@@ -180,12 +180,12 @@ def load_seed_geometry() -> pd.DataFrame:
     }
     if not required.issubset(points.columns):
         raise ValueError(
-            f"Seed geometry is missing {sorted(required - set(points.columns))}"
+            f"Seed PCA is missing {sorted(required - set(points.columns))}"
         )
     return points
 
 
-def summarise_seed_geometry(points: pd.DataFrame) -> pd.DataFrame:
+def summarise_seed_pca(points: pd.DataFrame) -> pd.DataFrame:
     predictions = load_transfer_predictions()
     merged = points.merge(
         predictions[
@@ -199,7 +199,7 @@ def summarise_seed_geometry(points: pd.DataFrame) -> pd.DataFrame:
     )
     if maximum_delta > 1e-7:
         raise ValueError(
-            "Seed-resolved geometry differs from frozen predictions: "
+            "Seed-resolved PCA differs from frozen predictions: "
             f"maximum delta {maximum_delta}"
         )
 
@@ -275,24 +275,25 @@ def summarise_seed_geometry(points: pd.DataFrame) -> pd.DataFrame:
     ).reset_index()
     reported = reported.rename(
         columns={
-            "internal_oof": "reported_internal_auc",
-            "locked_external": "reported_external_auc",
+            "internal_oof": "internal_auc",
+            "locked_external": "external_auc",
         }
     )
-    summary = summary.merge(
+    comparison = summary.merge(
         reported,
         on=["method_id", "chain", "seed_id"],
+        suffixes=("_pca", "_metrics"),
         validate="one_to_one",
     )
-    summary["internal_auc_delta"] = (
-        summary["internal_auc"] - summary["reported_internal_auc"]
-    ).abs()
-    summary["external_auc_delta"] = (
-        summary["external_auc"] - summary["reported_external_auc"]
-    ).abs()
-    if summary[["internal_auc_delta", "external_auc_delta"]].to_numpy().max() > 1e-12:
+    differences = np.column_stack(
+        [
+            comparison["internal_auc_pca"] - comparison["internal_auc_metrics"],
+            comparison["external_auc_pca"] - comparison["external_auc_metrics"],
+        ]
+    )
+    if np.abs(differences).max() > 1e-12:
         raise ValueError(
-            "Seed-resolved geometry AUC annotations differ from formal metrics"
+            "Seed-resolved PCA AUC annotations differ from the metric table"
         )
     protocol.atomic_csv(summary, study.RESULTS / "per_seed_pca_summary.csv")
     return summary
@@ -648,10 +649,10 @@ def plot_seed_atlas_pages(
             )
 
 
-def generate_geometry() -> pd.DataFrame:
+def generate_pca() -> pd.DataFrame:
     reporting.configure_plot()
-    points = load_seed_geometry()
-    summary = summarise_seed_geometry(points)
+    points = load_seed_pca()
+    summary = summarise_seed_pca(points)
     plot_transfer_examples(points, summary)
     plot_seed_atlas_pages(points, summary)
     return summary

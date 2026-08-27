@@ -16,7 +16,7 @@ import torch
 from analysis import protocol, reporting, seed_display
 from analysis.experiment_02_seed_and_attention_normalisation import (
     normalizer_study as normalizers,
-    seed_mechanism as seeds,
+    layer_seed_study as seeds,
 )
 
 
@@ -565,7 +565,7 @@ def factorization_category_summary(metrics: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def factorization_report() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def factorization_report() -> None:
     factor_predictions = pd.read_csv(
         RUN_ARTIFACTS / "factorization_predictions.csv",
         dtype={"attention_seed_value": str, "classifier_seed_value": str},
@@ -613,19 +613,6 @@ def factorization_report() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     factor_metrics = factorization_metrics(factor_predictions)
     category_summary = factorization_category_summary(factor_metrics)
 
-    formal_predictions = seeds.formal_predictions(factor_predictions)
-    formal_metrics = reporting.metric_table(formal_predictions)
-    formal_summary = formal_metrics.groupby(
-        ["experiment_id", "method_id", "method_label", "chain", "split"],
-        as_index=False,
-    ).agg(
-        seed_count=("seed_id", "nunique"),
-        auc_median=("auc", "median"),
-        auc_q1=("auc", lambda values: values.quantile(0.25)),
-        auc_q3=("auc", lambda values: values.quantile(0.75)),
-        balanced_accuracy_median=("balanced_accuracy", "median"),
-    )
-
     protocol.atomic_csv(factor_metrics, RESULTS / "factorization_pooled_oof.csv")
 
     plot_factorization(
@@ -637,7 +624,6 @@ def factorization_report() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         factor_history,
         SUPPLEMENTARY / "figures" / "factorization_learning_curves.png",
     )
-    return formal_predictions, formal_metrics, formal_summary
 
 
 def normalizer_report() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -720,53 +706,9 @@ def normalizer_report() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         history,
         SUPPLEMENTARY / "figures" / "normalizer_learning_curves.png",
     )
-    return predictions, metrics, summary
-
-
-def compose_results(
-    prediction_frames: tuple[pd.DataFrame, ...],
-    metric_frames: tuple[pd.DataFrame, ...],
-    summary_frames: tuple[pd.DataFrame, ...],
-) -> None:
-    predictions = pd.concat(
-        prediction_frames,
-        ignore_index=True,
-    )
-    metrics = pd.concat(
-        metric_frames,
-        ignore_index=True,
-    )
-    summary = pd.concat(
-        summary_frames,
-        ignore_index=True,
-    )
-    if set(predictions["experiment_id"]) != {EXPERIMENT_ID}:
-        raise ValueError("Merged prediction experiment ID mismatch")
-    key = [
-        "experiment_id",
-        "method_id",
-        "chain",
-        "seed_id",
-        "split",
-        "subject_id",
-    ]
-    if predictions.duplicated(key).any():
-        raise ValueError("Duplicate patient prediction in merged Experiment 02")
-    prediction_path = RUN_ARTIFACTS / "internal_predictions.csv"
-    if not prediction_path.exists():
-        raise FileNotFoundError(
-            "Combined Experiment 02 predictions are missing; run the internal stage"
-        )
-    recorded = pd.read_csv(prediction_path, dtype={"seed_value": str})
-    order = ["method_id", "chain", "seed_id", "split", "subject_id"]
-    pd.testing.assert_frame_equal(
-        recorded.sort_values(order).reset_index(drop=True),
-        predictions[protocol.PREDICTION_COLUMNS].sort_values(order).reset_index(drop=True),
-        check_dtype=False,
-        obj="Recorded and report-derived Experiment 02 predictions",
-    )
     protocol.atomic_csv(metrics[reporting.METRIC_COLUMNS], RESULTS / "metrics_by_seed.csv")
     protocol.atomic_csv(summary, RESULTS / "metrics_summary.csv")
+    return predictions, metrics, summary
 
 
 def milestone_metrics(predictions: pd.DataFrame) -> pd.DataFrame:
@@ -841,7 +783,7 @@ def plot_selected_seed_diagnostics(
             linestyle="--",
             linewidth=1.2,
             alpha=0.72,
-            label="Formal endpoint: 50 epochs" if axis is axes[0] else None,
+            label="Main endpoint: 50 epochs" if axis is axes[0] else None,
         )
     axes[0].set(
         xlabel="Checkpoint epoch",
@@ -864,7 +806,7 @@ def plot_selected_seed_diagnostics(
     )
     figure.suptitle(
         "Preliminary 300-epoch diagnostic — three selected-lucky seeds; "
-        "formal endpoint = 50 epochs",
+        "main endpoint = 50 epochs",
         y=1.02,
     )
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -909,11 +851,6 @@ def diagnostics() -> None:
 
 
 def generate() -> None:
-    """Generate the formal Experiment 02 tables and figures."""
-    factor_predictions, factor_metrics, factor_summary = factorization_report()
-    normalizer_predictions, normalizer_metrics, normalizer_summary = normalizer_report()
-    compose_results(
-        (factor_predictions, normalizer_predictions),
-        (factor_metrics, normalizer_metrics),
-        (factor_summary, normalizer_summary),
-    )
+    """Generate the Experiment 02 tables and figures."""
+    factorization_report()
+    normalizer_report()

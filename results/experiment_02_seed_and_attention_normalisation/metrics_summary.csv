@@ -1,5 +1,4 @@
 experiment_id,method_id,method_label,chain,split,seed_count,auc_median,auc_q1,auc_q3,balanced_accuracy_median
-experiment_02_seed_and_attention_normalisation,attention_classifier_factorization,Sparsemax Attention MIL: attention/classifier seed factorisation,alpha,internal_oof,25,0.8128300714507612,0.712022367194781,0.881950916433675,0.7239826032929482
 experiment_02_seed_and_attention_normalisation,sceptr_entmax15,SCEPTR + Entmax-1.5 Attention MIL,alpha,internal_oof,9,0.91627834731283,0.8642435538987263,0.9574401988195093,0.833488661074868
 experiment_02_seed_and_attention_normalisation,sceptr_entmax15,SCEPTR + Entmax-1.5 Attention MIL,beta,internal_oof,9,0.8306927617272446,0.7927927927927928,0.8707673190431812,0.7735321528424977
 experiment_02_seed_and_attention_normalisation,sceptr_softmax,SCEPTR + Softmax Attention MIL,alpha,internal_oof,9,0.9734389561975769,0.9721963342652997,0.9791860826343585,0.8732525629077353

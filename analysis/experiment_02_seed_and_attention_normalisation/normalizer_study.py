@@ -322,22 +322,6 @@ def validate_predictions(frame: pd.DataFrame) -> None:
                     raise ValueError(f"Incomplete OOF: {method_id}/{chain}/{seed_id}")
 
 
-def write_internal_predictions(
-    factorization: pd.DataFrame,
-    normalizers: pd.DataFrame,
-) -> pd.DataFrame:
-    result = pd.concat([factorization, normalizers], ignore_index=True)
-    if list(result.columns) != list(protocol.PREDICTION_COLUMNS):
-        raise ValueError("Combined Experiment 02 predictions have an invalid schema")
-    if set(result["experiment_id"]) != {EXPERIMENT_ID}:
-        raise ValueError("Combined Experiment 02 predictions have an invalid experiment ID")
-    key = ["method_id", "chain", "seed_id", "split", "subject_id"]
-    if result.duplicated(key).any():
-        raise ValueError("Duplicate patient prediction in combined Experiment 02 output")
-    protocol.atomic_csv(result, RUN_ARTIFACTS / "internal_predictions.csv")
-    return result
-
-
 def internal(device: torch.device) -> pd.DataFrame:
     output: list[dict] = []
     histories: list[pd.DataFrame] = []

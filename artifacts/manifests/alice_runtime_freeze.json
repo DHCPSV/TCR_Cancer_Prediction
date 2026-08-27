@@ -2,13 +2,12 @@
   "experiments": {
     "experiment_04_alice_model": {
       "analysis_code_files": {
-        "analysis/experiment_04_alice_model/families.py": "2145232a4247d3de1a33ae48a80396d139aa2b8c096da98c8236527521a173eb",
-        "analysis/experiment_04_alice_model/gate_free_pca.py": "cd9706f65720a9dd69252f3a1beb4b3fa0fd0f1f818e99f54b5d2d52194fb7bf",
+        "analysis/experiment_04_alice_model/families.py": "1deef6cfbaa3c42c5c2c08b21911b2b0f4d271a2ae25e85398d9cc5e4ce5ff3b",
+        "analysis/experiment_04_alice_model/gate_free_pca.py": "95008d4fcef0e1ecf78ea567d15ea640eb0aa6ae16f91af3a46978cbabe55bf5",
         "analysis/experiment_04_alice_model/learning_curves.py": "67ab75b455a8bd886e563bc617c55dee73b162761774b645f72ee04a4d38b0d5",
-        "analysis/experiment_04_alice_model/no_hard_gate.py": "f086a21c45e77cc0dff18d4c42c6ea3a12bd578fc40d9238207a5c4ffe8b5d82",
-        "analysis/experiment_04_alice_model/report.py": "0ee14eaee6ba5eb04563e8052bb9cbc5f1edaea28cc1b1ecaa63387f5d05b117",
-        "analysis/experiment_04_alice_model/run.py": "426c12ae6919b9997f71f1a3627cd7773f454c2633da1bcffda78b88777c876d",
-        "analysis/experiment_04_alice_model/vdjdb_lookup.py": "25b9d4561b73de5741c63002cc97afb6b76ee79de5e26dca9b187837e23e04ab",
+        "analysis/experiment_04_alice_model/report.py": "e57fdeb476c4da7bdfadb143bdbe273134c555c4267a183caf40c76c545e5517",
+        "analysis/experiment_04_alice_model/run.py": "82a82c578af0bc3ffe1904c3afe0537ee348306d0f8f6024b58c6a24055cd2af",
+        "analysis/experiment_04_alice_model/vdjdb_lookup.py": "797baba82f347b3d84e6e38b3cdb575045159a888c108558e48437e5d73b3b2a",
         "analysis/reporting.py": "f654a5ec6400a0327434c8f6266fb55e68a9f519f5c1ac9bd3fb3a600c1ccbbf"
       },
       "checkpoint_count": 400,
@@ -21,30 +20,40 @@
       ],
       "expected_checkpoint_count": 400,
       "model_code_files": {
-        "analysis/experiment_04_alice_model/core.py": "01a22b11d5dc567271aa73ec811172fa5a2d676f708a74ec55ff6dcf805be4d9",
-        "analysis/experiment_04_alice_model/methods.py": "f027e93da08bebbf72d7743e15679f17df6492f642c91bab88b2b3e81fbc8c3a",
-        "analysis/experiment_04_alice_model/prepare.py": "36a370440aee6445e3ea5c70b8d42aea7ba0523b89f400ea483244de0359e318",
-        "analysis/experiment_04_alice_model/study.py": "7bba8c32ba3861ece9b562068271251f169e53d829780b09c31c2ab93499a9f1",
-        "analysis/training.py": "9988a9c16364a7181dbfa6e111f61fe026b1d1726d6a7a3af4d069d8a17b6a9e",
-        "pipeline/prepare_data.py": "1d8698d814ab334381e3082fd4c85874793e2e6bd5fc42c2cf17b6f7f63b8cf3",
+        "analysis/experiment_04_alice_model/methods.py": "9f72169935b84c155e79767fd948fcfbe54e4dbbb0d86580084089876134f101",
+        "analysis/experiment_04_alice_model/prepare.py": "377dce822a42d9240966d8ac4d580feb004cb07d6e33bea6bbca049fd2988bba",
+        "analysis/experiment_04_alice_model/study.py": "35402f778e7566c857914d2bdbc4b6f6ddc519a79832de899dfc9c8f9ebd7b5e",
+        "analysis/training.py": "43cdda65262ba2acb8aaad7b1f5fb2a5d35166eaab66069e7aeb2880174ead16",
+        "pipeline/prepare_data.py": "ff5969c678006219215ccfbe915d32e299e1106d1088c0f07e6f6ee725195143",
         "third_party/alice/alice_worker.R": "39fa6b46d1d954d93003d32107dfb40f17883ef6760c337bb3041424a1edaaae"
       }
+    },
+    "experiment_04_alice_model_no_hard_gate": {
+      "checkpoint_count": 400,
+      "checkpoint_digest": "cb40d4c4eef784966ce875becf44c489388060802e474c84a48a95bbe0625067",
+      "checkpoint_method_ids": [
+        "no_gate_l1_linear",
+        "no_gate_l1_mlp",
+        "no_gate_l2_linear",
+        "no_gate_l2_mlp"
+      ],
+      "expected_checkpoint_count": 400
     }
   },
   "files": {
     "artifacts/alice/external_file_manifest.csv": "0a8d9a769a918f38a914658110f103de66918aea9a1cb17452b08f1ab3584a44",
-    "artifacts/alice/external_manifest.csv": "33d0c61b97084b8e8f61a1c88666f9c93585f27dbc5716fb1c0353c7d74070df",
+    "artifacts/alice/external_manifest.csv": "e218d9b5f397042a6a52f580dabfab30f343c5fa16a93f1315a5cba9a4292a8f",
     "artifacts/alice/internal_file_manifest.csv": "025a335367c6b25953e85de7a53dd1b7f6ea2daa5b4cfca2e57538be9d390d54",
-    "artifacts/alice/internal_manifest.csv": "c6836ad47b813848c4809d3fb92eb3897ec46d37a385f81b6149447310220d65",
-    "artifacts/manifests/external_representations.csv": "c1f7d636add88f1a33aca3d959205438e4eea5fac38de7a9dc115875ac6d5777",
-    "artifacts/manifests/external_samples.csv": "d5cbb46b170625bd77b5b35f562ca1bcbfcceae727226260d99609905fe46a49",
-    "artifacts/manifests/external_subjects.csv": "88bdc000e9d3c00ee740feff790ddc05bace24576615d94028139611a249d411",
-    "artifacts/manifests/fivefold_seed913271.csv": "0f4f9268321e9715ab64249936216b1c8926ff1feefb1b900258ab30a070358f",
-    "artifacts/manifests/internal_representations.csv": "5da9772e9243b91273f7896a058581c969940c301f9c05970a53c5359be9b282",
-    "artifacts/manifests/internal_samples.csv": "19d12b47a57e8430bf3c4f9a68fbc73d1af0a2b39133304ad247ff29e30c8df8",
-    "artifacts/manifests/internal_subjects.csv": "4f5e2c2b3fc14c5833ea8e5472389599cc2091c1f607f15a1402a1c0c0573be0",
-    "artifacts/manifests/representation_comparison_external.csv": "516e227a151d2a08514321de23aff37cfecd13f79b66ecdb5b1e12f203b31681",
-    "artifacts/manifests/representation_comparison_internal.csv": "7fcc2ced3393cc33cd20ca697f1e1936d450492aa53d427a27bf58b53a47dc20"
+    "artifacts/alice/internal_manifest.csv": "f18ffdb51fb09842e1c2cad443d7623731927e6ad57534bd80732850db8e33fc",
+    "artifacts/manifests/external_representations.csv": "79fd98710bcc1b17dc0d70a25222915bf6e31043b99c3640f66120aee158fd66",
+    "artifacts/manifests/external_samples.csv": "21376c0ef89d072f56750a4a0807e05aed1157f0074a04d6320017feddf5d0b5",
+    "artifacts/manifests/external_subjects.csv": "7b95b8621f3793be1648509389a21f18923ae4a51b2ef8bfc829667ccc43fc2a",
+    "artifacts/manifests/fivefold_seed913271.csv": "4f66d335725eee9fcd9c25d70df608efdaee9402404b93c825ed55af3d36ab58",
+    "artifacts/manifests/internal_representations.csv": "1b7fc6d85119ba002d83369ed82cb383976b0f6825d4e715d16f9af5f0d4d25c",
+    "artifacts/manifests/internal_samples.csv": "07bc8087d64899d39c4e41674d4289cf9a9a122dac0798c8b22f197fd2dbd773",
+    "artifacts/manifests/internal_subjects.csv": "994a38d83690f318b5a530f8895501c76903feaa9b0cbb86e7cac03dc8b3123a",
+    "artifacts/manifests/representation_comparison_external.csv": "9350213100639c224e039c866c56ab34027bc68f2f97c38e8c41ce874aa9efe8",
+    "artifacts/manifests/representation_comparison_internal.csv": "7ae8e60ad2220d7de0cc20d281c1c80a64debf85480636cff0e4fddcb7bd870c"
   },
   "future_work": {
     "representation_dependence": {
@@ -61,8 +70,7 @@
         "aa_property_l2"
       ],
       "checkpoint_root": "artifacts/checkpoints/experiment_04_alice_model",
-      "expected_checkpoint_count": 120,
-      "status": "preliminary_partial"
+      "expected_checkpoint_count": 120
     }
   },
   "schema_version": 2

@@ -8,8 +8,8 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from analysis import protocol, training
-from analysis.experiment_03_external_generalisation import geometry, report, study
-from pipeline import workflow
+from analysis.experiment_03_external_generalisation import pca, report, study
+from pipeline import report_cache, workflow
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -19,9 +19,8 @@ def main(argv: list[str] | None = None) -> None:
         choices=(
             "self-test",
             "prepare",
-            "assemble",
             "report",
-            "geometry",
+            "pca",
             "freeze",
             "all",
         ),
@@ -32,11 +31,26 @@ def main(argv: list[str] | None = None) -> None:
         choices=("auto", "cpu", "cuda"),
         default="cuda",
     )
+    parser.add_argument("--input-mode", choices=("raw", "cached"), default="raw")
     args = parser.parse_args(argv)
+
+    if args.input_mode == "cached":
+        if args.stage in {"prepare", "freeze"}:
+            parser.error("cached mode contains report inputs, not preparation inputs")
+        report_cache.verify()
+        if args.stage in {"self-test", "all"}:
+            study.self_test()
+            pca.self_test()
+            report.self_test()
+        if args.stage in {"report", "all"}:
+            report.generate_transfer()
+        if args.stage in {"pca", "all"}:
+            report.generate_pca()
+        return
 
     if args.stage == "self-test":
         study.self_test()
-        geometry.self_test()
+        pca.self_test()
         report.self_test()
         return
 
@@ -45,20 +59,18 @@ def main(argv: list[str] | None = None) -> None:
         external_state = workflow.ensure_external()
         workflow.guard_consumer(
             study.EXPERIMENT_ID,
-            (study.CHECKPOINTS, study.RUNS, study.RESULTS),
+            (study.CHECKPOINTS, study.RUNS),
             (internal_state.path, external_state.path),
         )
         device = training.device_from(args.device)
         internal, external, model_records = study.prepare_transfer(device)
-        geometry.prepare(device, internal, external)
+        pca.prepare(device, internal, external)
         study.write_manifests(model_records)
 
-    if args.stage in ("assemble", "all"):
-        study.assemble()
     if args.stage in ("report", "all"):
         report.generate_transfer()
-    if args.stage in ("geometry", "all"):
-        report.generate_geometry()
+    if args.stage in ("pca", "all"):
+        report.generate_pca()
     if args.stage in ("freeze", "all"):
         study.freeze()
 

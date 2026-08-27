@@ -11,14 +11,14 @@ import pandas as pd
 from sklearn.decomposition import PCA
 
 from analysis import protocol, reporting
-from analysis.experiment_04_alice_model import core, study
+from analysis.experiment_04_alice_model import methods, study
 from analysis.experiment_04_alice_model.methods import alice_pool
 
 
 CHAINS = ("alpha", "beta")
 NORMS = ("l1", "l2")
-OUTPUT = core.OUTPUT / "future_work" / "gate_free_pca"
-RUN_ARTIFACTS = core.RUN_ARTIFACTS / "future_work" / "gate_free_pca"
+OUTPUT = methods.RESULTS / "future_work" / "gate_free_pca"
+RUN_ARTIFACTS = methods.RUN_ARTIFACTS / "future_work" / "gate_free_pca"
 FIGURE = OUTPUT / "figures" / "gate_free_alice_patient_vector_pca.png"
 
 
@@ -89,8 +89,6 @@ def prepare() -> tuple[pd.DataFrame, pd.DataFrame]:
                 coordinate_parts.append(part)
             summary_rows.append(
                 {
-                    "scope": "preliminary_future_work",
-                    "status": "partial",
                     "chain": chain,
                     "pooling_normalisation": norm,
                     "pca_fit_scope": "internal_only",
@@ -107,7 +105,7 @@ def prepare() -> tuple[pd.DataFrame, pd.DataFrame]:
     coordinates = pd.concat(coordinate_parts, ignore_index=True)
     summary = pd.DataFrame(summary_rows)
     protocol.atomic_csv(coordinates, RUN_ARTIFACTS / "patient_coordinates.csv")
-    protocol.atomic_csv(summary, OUTPUT / "gate_free_pca_summary.csv")
+    protocol.atomic_csv(summary, RUN_ARTIFACTS / "summary.csv")
     return coordinates, summary
 
 
@@ -117,7 +115,7 @@ def plot(coordinates: pd.DataFrame, summary: pd.DataFrame, path: Path = FIGURE) 
         "internal_control": ("Internal control", "#2563eb", "o"),
         "tx100_cancer": ("Internal cancer", "#dc2626", "o"),
         "bcg_control": ("External control", "#60a5fa", "^"),
-        "tx421_cancer": ("External cancer", "#f59e0b", "^"),
+        "additional_tracerx_cancer": ("External cancer", "#f59e0b", "^"),
     }
     figure, axes = plt.subplots(2, 2, figsize=(10.4, 8.4), constrained_layout=True)
     for row_index, chain in enumerate(CHAINS):
@@ -163,12 +161,14 @@ def plot(coordinates: pd.DataFrame, summary: pd.DataFrame, path: Path = FIGURE) 
 
 def report() -> None:
     coordinates_path = RUN_ARTIFACTS / "patient_coordinates.csv"
-    summary_path = OUTPUT / "gate_free_pca_summary.csv"
+    summary_path = RUN_ARTIFACTS / "summary.csv"
     if coordinates_path.exists() and summary_path.exists():
         coordinates = pd.read_csv(coordinates_path)
         summary = pd.read_csv(summary_path)
     else:
         coordinates, summary = prepare()
+    summary = summary.drop(columns=["scope", "status"], errors="ignore")
+    protocol.atomic_csv(summary, OUTPUT / "gate_free_pca_summary.csv")
     plot(coordinates, summary)
 
 
