@@ -12,6 +12,18 @@ from analysis import protocol, training
 from analysis.experiment_04_alice_model import core, report as reporting, study
 
 
+WINDOWS_RSCRIPT = Path(r"C:\Program Files\R\R-4.3.3\bin\Rscript.exe")
+
+
+def discover_rscript() -> str:
+    discovered = shutil.which("Rscript")
+    if discovered:
+        return discovered
+    if sys.platform == "win32" and WINDOWS_RSCRIPT.is_file():
+        return str(WINDOWS_RSCRIPT)
+    return "Rscript"
+
+
 def self_test() -> None:
     from analysis.experiment_04_alice_model import (
         families,
@@ -70,9 +82,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--device", default="cuda", choices=("auto", "cpu", "cuda"))
     scripts = Path(sys.executable).resolve().parent
-    default_rscript = shutil.which("Rscript") or "Rscript"
     default_olga = shutil.which("olga-compute_pgen") or scripts / "olga-compute_pgen.exe"
-    parser.add_argument("--rscript", default=str(default_rscript))
+    parser.add_argument("--rscript", default=discover_rscript())
     parser.add_argument("--olga", default=str(default_olga))
     parser.add_argument("--workers", type=int, default=8)
     return parser.parse_args(argv)

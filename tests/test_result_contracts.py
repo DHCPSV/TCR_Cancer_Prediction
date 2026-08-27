@@ -18,6 +18,7 @@ from analysis.experiment_02_seed_and_attention_normalisation import run as exp2_
 from analysis.experiment_03_external_generalisation import geometry as exp3_geometry
 from analysis.experiment_03_external_generalisation import study as exp3_study
 from analysis.experiment_04_alice_model import core as exp4_core
+from analysis.experiment_04_alice_model import run as exp4_run
 from analysis.experiment_04_alice_model import no_hard_gate, study as exp4_study
 from analysis.experiment_04_alice_model.methods import HARD_THRESHOLD, alice_pool
 
@@ -226,6 +227,22 @@ class ResultSchemaAndMetricParityTest(unittest.TestCase):
         ):
             predictions = read_csv(PREDICTION_METRIC_PAIRS[experiment_id][0][0])
             self.assertEqual(set(predictions["split"]), {"internal_oof"})
+
+
+class RuntimeDiscoveryTest(unittest.TestCase):
+    def test_exp4_discovers_supported_windows_rscript(self) -> None:
+        expected = str(exp4_run.WINDOWS_RSCRIPT)
+        with (
+            patch.object(exp4_run.shutil, "which", return_value=None),
+            patch.object(exp4_run.sys, "platform", "win32"),
+            patch.object(exp4_run.Path, "is_file", return_value=True),
+        ):
+            self.assertEqual(exp4_run.discover_rscript(), expected)
+
+    def test_exp4_prefers_rscript_on_path(self) -> None:
+        expected = r"D:\R\bin\Rscript.exe"
+        with patch.object(exp4_run.shutil, "which", return_value=expected):
+            self.assertEqual(exp4_run.discover_rscript(), expected)
 
 
 class Experiment03FrozenTransferContractTest(unittest.TestCase):

@@ -7,7 +7,7 @@
         "analysis/experiment_04_alice_model/learning_curves.py": "67ab75b455a8bd886e563bc617c55dee73b162761774b645f72ee04a4d38b0d5",
         "analysis/experiment_04_alice_model/no_hard_gate.py": "f086a21c45e77cc0dff18d4c42c6ea3a12bd578fc40d9238207a5c4ffe8b5d82",
         "analysis/experiment_04_alice_model/report.py": "0ee14eaee6ba5eb04563e8052bb9cbc5f1edaea28cc1b1ecaa63387f5d05b117",
-        "analysis/experiment_04_alice_model/run.py": "7943ca5e68e9e6504ce8a80bed7973b1136aa90f75e207d43f29f0e11a317e0e",
+        "analysis/experiment_04_alice_model/run.py": "426c12ae6919b9997f71f1a3627cd7773f454c2633da1bcffda78b88777c876d",
         "analysis/experiment_04_alice_model/vdjdb_lookup.py": "25b9d4561b73de5741c63002cc97afb6b76ee79de5e26dca9b187837e23e04ab",
         "analysis/reporting.py": "f654a5ec6400a0327434c8f6266fb55e68a9f519f5c1ac9bd3fb3a600c1ccbbf"
       },
@@ -21,10 +21,10 @@
       ],
       "expected_checkpoint_count": 400,
       "model_code_files": {
-        "analysis/experiment_04_alice_model/core.py": "55ff666cf1f29a9ad3e493b30087304bf1f78dcf3d1c70af59b163ecbba5e44b",
+        "analysis/experiment_04_alice_model/core.py": "01a22b11d5dc567271aa73ec811172fa5a2d676f708a74ec55ff6dcf805be4d9",
         "analysis/experiment_04_alice_model/methods.py": "f027e93da08bebbf72d7743e15679f17df6492f642c91bab88b2b3e81fbc8c3a",
-        "analysis/experiment_04_alice_model/prepare.py": "caf957459e7597884775fc82fcee4e41bcc95bb514c884ed291f31350169c028",
-        "analysis/experiment_04_alice_model/study.py": "45e5bccbf122a58c9f86f0d6631c46b9fc3542147c40fbddf946c3adcee5b945",
+        "analysis/experiment_04_alice_model/prepare.py": "36a370440aee6445e3ea5c70b8d42aea7ba0523b89f400ea483244de0359e318",
+        "analysis/experiment_04_alice_model/study.py": "7bba8c32ba3861ece9b562068271251f169e53d829780b09c31c2ab93499a9f1",
         "analysis/training.py": "9988a9c16364a7181dbfa6e111f61fe026b1d1726d6a7a3af4d069d8a17b6a9e",
         "pipeline/prepare_data.py": "1d8698d814ab334381e3082fd4c85874793e2e6bd5fc42c2cf17b6f7f63b8cf3",
         "third_party/alice/alice_worker.R": "39fa6b46d1d954d93003d32107dfb40f17883ef6760c337bb3041424a1edaaae"

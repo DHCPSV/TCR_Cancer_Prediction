@@ -98,11 +98,16 @@ Install R 4.3.3 at `C:\Program Files\R\R-4.3.3` and Rtools43 at
 TCRgrapher source:
 
 ```powershell
-Rscript -e "install.packages('remotes', repos='https://cloud.r-project.org')"
-Rscript -e "remotes::install_version('data.table', version='1.17.8', repos='https://cloud.r-project.org'); remotes::install_version('stringdist', version='0.9.15', repos='https://cloud.r-project.org'); remotes::install_version('iterators', version='1.0.14', repos='https://cloud.r-project.org'); remotes::install_version('foreach', version='1.5.2', repos='https://cloud.r-project.org'); remotes::install_version('doParallel', version='1.0.17', repos='https://cloud.r-project.org')"
-R.exe CMD INSTALL third_party\alice\tcrgrapher
-Rscript -e "library(tcrgrapher); library(data.table); cat('ALICE R runtime ready\n')"
+$rscript = 'C:\Program Files\R\R-4.3.3\bin\Rscript.exe'
+$r = 'C:\Program Files\R\R-4.3.3\bin\R.exe'
+& $rscript -e "install.packages('remotes', repos='https://cloud.r-project.org')"
+& $rscript -e "remotes::install_version('data.table', version='1.17.8', repos='https://cloud.r-project.org'); remotes::install_version('stringdist', version='0.9.15', repos='https://cloud.r-project.org'); remotes::install_version('iterators', version='1.0.14', repos='https://cloud.r-project.org'); remotes::install_version('foreach', version='1.5.2', repos='https://cloud.r-project.org'); remotes::install_version('doParallel', version='1.0.17', repos='https://cloud.r-project.org')"
+& $r CMD INSTALL third_party\alice\tcrgrapher
+& $rscript -e "library(tcrgrapher); library(data.table); cat('ALICE R runtime ready\n')"
 ```
+
+The Experiment 4 runner discovers this standard Windows installation when R
+is not on `PATH`. A different installation can be selected with `--rscript`.
 
 ## Data placement
 
