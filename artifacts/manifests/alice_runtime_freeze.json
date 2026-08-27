@@ -1,0 +1,69 @@
+{
+  "experiments": {
+    "experiment_04_alice_model": {
+      "analysis_code_files": {
+        "analysis/experiment_04_alice_model/families.py": "2145232a4247d3de1a33ae48a80396d139aa2b8c096da98c8236527521a173eb",
+        "analysis/experiment_04_alice_model/gate_free_pca.py": "cd9706f65720a9dd69252f3a1beb4b3fa0fd0f1f818e99f54b5d2d52194fb7bf",
+        "analysis/experiment_04_alice_model/learning_curves.py": "67ab75b455a8bd886e563bc617c55dee73b162761774b645f72ee04a4d38b0d5",
+        "analysis/experiment_04_alice_model/no_hard_gate.py": "f086a21c45e77cc0dff18d4c42c6ea3a12bd578fc40d9238207a5c4ffe8b5d82",
+        "analysis/experiment_04_alice_model/report.py": "0ee14eaee6ba5eb04563e8052bb9cbc5f1edaea28cc1b1ecaa63387f5d05b117",
+        "analysis/experiment_04_alice_model/run.py": "7943ca5e68e9e6504ce8a80bed7973b1136aa90f75e207d43f29f0e11a317e0e",
+        "analysis/experiment_04_alice_model/vdjdb_lookup.py": "25b9d4561b73de5741c63002cc97afb6b76ee79de5e26dca9b187837e23e04ab",
+        "analysis/reporting.py": "f654a5ec6400a0327434c8f6266fb55e68a9f519f5c1ac9bd3fb3a600c1ccbbf"
+      },
+      "checkpoint_count": 400,
+      "checkpoint_digest": "c5363f10a852b2d32bcad2cbafe75803619396e1ef07653caafb346555d61382",
+      "checkpoint_method_ids": [
+        "alice_l1_linear",
+        "alice_l1_mlp",
+        "alice_l2_linear",
+        "alice_l2_mlp"
+      ],
+      "expected_checkpoint_count": 400,
+      "model_code_files": {
+        "analysis/experiment_04_alice_model/core.py": "55ff666cf1f29a9ad3e493b30087304bf1f78dcf3d1c70af59b163ecbba5e44b",
+        "analysis/experiment_04_alice_model/methods.py": "f027e93da08bebbf72d7743e15679f17df6492f642c91bab88b2b3e81fbc8c3a",
+        "analysis/experiment_04_alice_model/prepare.py": "caf957459e7597884775fc82fcee4e41bcc95bb514c884ed291f31350169c028",
+        "analysis/experiment_04_alice_model/study.py": "45e5bccbf122a58c9f86f0d6631c46b9fc3542147c40fbddf946c3adcee5b945",
+        "analysis/training.py": "9988a9c16364a7181dbfa6e111f61fe026b1d1726d6a7a3af4d069d8a17b6a9e",
+        "pipeline/prepare_data.py": "1d8698d814ab334381e3082fd4c85874793e2e6bd5fc42c2cf17b6f7f63b8cf3",
+        "third_party/alice/alice_worker.R": "39fa6b46d1d954d93003d32107dfb40f17883ef6760c337bb3041424a1edaaae"
+      }
+    }
+  },
+  "files": {
+    "artifacts/alice/external_file_manifest.csv": "0a8d9a769a918f38a914658110f103de66918aea9a1cb17452b08f1ab3584a44",
+    "artifacts/alice/external_manifest.csv": "33d0c61b97084b8e8f61a1c88666f9c93585f27dbc5716fb1c0353c7d74070df",
+    "artifacts/alice/internal_file_manifest.csv": "025a335367c6b25953e85de7a53dd1b7f6ea2daa5b4cfca2e57538be9d390d54",
+    "artifacts/alice/internal_manifest.csv": "c6836ad47b813848c4809d3fb92eb3897ec46d37a385f81b6149447310220d65",
+    "artifacts/manifests/external_representations.csv": "c1f7d636add88f1a33aca3d959205438e4eea5fac38de7a9dc115875ac6d5777",
+    "artifacts/manifests/external_samples.csv": "d5cbb46b170625bd77b5b35f562ca1bcbfcceae727226260d99609905fe46a49",
+    "artifacts/manifests/external_subjects.csv": "88bdc000e9d3c00ee740feff790ddc05bace24576615d94028139611a249d411",
+    "artifacts/manifests/fivefold_seed913271.csv": "0f4f9268321e9715ab64249936216b1c8926ff1feefb1b900258ab30a070358f",
+    "artifacts/manifests/internal_representations.csv": "5da9772e9243b91273f7896a058581c969940c301f9c05970a53c5359be9b282",
+    "artifacts/manifests/internal_samples.csv": "19d12b47a57e8430bf3c4f9a68fbc73d1af0a2b39133304ad247ff29e30c8df8",
+    "artifacts/manifests/internal_subjects.csv": "4f5e2c2b3fc14c5833ea8e5472389599cc2091c1f607f15a1402a1c0c0573be0",
+    "artifacts/manifests/representation_comparison_external.csv": "516e227a151d2a08514321de23aff37cfecd13f79b66ecdb5b1e12f203b31681",
+    "artifacts/manifests/representation_comparison_internal.csv": "7fcc2ced3393cc33cd20ca697f1e1936d450492aa53d427a27bf58b53a47dc20"
+  },
+  "future_work": {
+    "representation_dependence": {
+      "checkpoint_count": 120,
+      "checkpoint_digest": "7b3c82d77f0bf60263b7e968f9dc706a2c5986066c92887a2524cbd870efdb28",
+      "checkpoint_method_ids": [
+        "sceptr_l1",
+        "sceptr_l2",
+        "atchley_l1",
+        "atchley_l2",
+        "kidera_l1",
+        "kidera_l2",
+        "aa_property_l1",
+        "aa_property_l2"
+      ],
+      "checkpoint_root": "artifacts/checkpoints/experiment_04_alice_model",
+      "expected_checkpoint_count": 120,
+      "status": "preliminary_partial"
+    }
+  },
+  "schema_version": 2
+}

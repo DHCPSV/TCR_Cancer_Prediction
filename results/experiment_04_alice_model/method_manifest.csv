@@ -1,0 +1,5 @@
+method_id,method_label,scope,chains,seed_ids,representation,pooling_normalisation,classifier_head,hard_threshold
+alice_l1_linear,L1 + Linear,confirmatory_hard_gate,"alpha,beta","S01,S02,S10,S04,S05,S11,S07,S08,S12,S13",sceptr,l1,linear,0.3
+alice_l1_mlp,L1 + MLP,confirmatory_hard_gate,"alpha,beta","S01,S02,S10,S04,S05,S11,S07,S08,S12,S13",sceptr,l1,mlp,0.3
+alice_l2_linear,L2 + Linear,confirmatory_hard_gate,"alpha,beta","S01,S02,S10,S04,S05,S11,S07,S08,S12,S13",sceptr,l2,linear,0.3
+alice_l2_mlp,L2 + MLP,confirmatory_hard_gate,"alpha,beta","S01,S02,S10,S04,S05,S11,S07,S08,S12,S13",sceptr,l2,mlp,0.3

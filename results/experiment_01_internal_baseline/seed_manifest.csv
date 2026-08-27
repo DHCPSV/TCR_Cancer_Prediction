@@ -1,0 +1,4 @@
+seed_id,figure_label,model_seed,seed_group,fold_seed,shuffle_seed
+seed_1,Seed 1: 777,777,lucky,913271,913271
+seed_2,Seed 2: 42,42,ordinary,913271,913271
+seed_3,Seed 3: 123,123,moderate,913271,913271

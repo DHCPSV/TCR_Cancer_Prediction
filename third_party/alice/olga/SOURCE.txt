@@ -1,0 +1,7 @@
+Project: OLGA
+Origin: https://github.com/zsethna/OLGA
+Installed release: 1.2.4
+License: GPL-3.0 (see LICENSE)
+
+This directory contains the installed Python source and default generative models
+used by olga-compute_pgen in the ALICE experiment.

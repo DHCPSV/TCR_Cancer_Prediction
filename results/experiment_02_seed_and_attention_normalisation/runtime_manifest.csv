@@ -1,0 +1,2 @@
+torch_version,entmax_version,embedding,epochs,fold_seed,patient_shuffle_seed
+2.11.0+cu128,1.3,SCEPTR 64D,50,913271,913271

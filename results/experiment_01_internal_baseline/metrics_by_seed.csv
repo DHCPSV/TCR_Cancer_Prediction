@@ -1,0 +1,31 @@
+experiment_id,method_id,method_label,chain,seed_id,seed_value,seed_group,split,n,auc,balanced_accuracy,sensitivity,specificity
+experiment_01_internal_baseline,sceptr_sparsemax,SCEPTR,alpha,seed_1,777,lucky,internal_oof,169,0.9453246349798075,0.9568965517241379,0.9137931034482759,1.0
+experiment_01_internal_baseline,sceptr_sparsemax,SCEPTR,alpha,seed_2,42,ordinary,internal_oof,169,0.5739360049704877,0.579605467536502,0.46551724137931033,0.6936936936936937
+experiment_01_internal_baseline,sceptr_sparsemax,SCEPTR,alpha,seed_3,123,moderate,internal_oof,169,0.836439888164026,0.7502329916123021,0.6896551724137931,0.8108108108108109
+experiment_01_internal_baseline,sceptr_sparsemax,SCEPTR,beta,seed_1,777,lucky,internal_oof,169,0.7693383038210625,0.6613078595837216,0.6379310344827587,0.6846846846846847
+experiment_01_internal_baseline,sceptr_sparsemax,SCEPTR,beta,seed_2,42,ordinary,internal_oof,169,0.6272134203168687,0.6174277726001864,0.5862068965517241,0.6486486486486487
+experiment_01_internal_baseline,sceptr_sparsemax,SCEPTR,beta,seed_3,123,moderate,internal_oof,169,0.5479962721342032,0.5758776017396707,0.43103448275862066,0.7207207207207207
+experiment_01_internal_baseline,atchley_sparsemax,Atchley factors,alpha,seed_1,777,lucky,internal_oof,169,0.5097856477166822,0.4412084498291395,0.8103448275862069,0.07207207207207207
+experiment_01_internal_baseline,atchley_sparsemax,Atchley factors,alpha,seed_2,42,ordinary,internal_oof,169,0.6003417210313763,0.5283473128300715,0.7413793103448276,0.3153153153153153
+experiment_01_internal_baseline,atchley_sparsemax,Atchley factors,alpha,seed_3,123,moderate,internal_oof,169,0.4757688723205964,0.46722584653619137,0.6551724137931034,0.27927927927927926
+experiment_01_internal_baseline,atchley_sparsemax,Atchley factors,beta,seed_1,777,lucky,internal_oof,169,0.5264057160608885,0.47763280521901214,0.7931034482758621,0.16216216216216217
+experiment_01_internal_baseline,atchley_sparsemax,Atchley factors,beta,seed_2,42,ordinary,internal_oof,169,0.46831314072693386,0.4541006523765145,0.6379310344827587,0.2702702702702703
+experiment_01_internal_baseline,atchley_sparsemax,Atchley factors,beta,seed_3,123,moderate,internal_oof,169,0.5677228953091021,0.5420161540851196,0.5344827586206896,0.5495495495495496
+experiment_01_internal_baseline,kidera_sparsemax,Kidera factors,alpha,seed_1,777,lucky,internal_oof,169,0.5987884436160298,0.501941596769183,0.9137931034482759,0.09009009009009009
+experiment_01_internal_baseline,kidera_sparsemax,Kidera factors,alpha,seed_2,42,ordinary,internal_oof,169,0.7014600807704255,0.6010406958682821,0.9137931034482759,0.2882882882882883
+experiment_01_internal_baseline,kidera_sparsemax,Kidera factors,alpha,seed_3,123,moderate,internal_oof,169,0.5573159366262814,0.49627213420316874,0.9655172413793104,0.02702702702702703
+experiment_01_internal_baseline,kidera_sparsemax,Kidera factors,beta,seed_1,777,lucky,internal_oof,169,0.6495806150978565,0.4970487729108419,0.9310344827586207,0.06306306306306306
+experiment_01_internal_baseline,kidera_sparsemax,Kidera factors,beta,seed_2,42,ordinary,internal_oof,169,0.4502951227089158,0.4831469400434918,0.9482758620689655,0.018018018018018018
+experiment_01_internal_baseline,kidera_sparsemax,Kidera factors,beta,seed_3,123,moderate,internal_oof,169,0.5114942528735633,0.4958838148493321,0.9827586206896551,0.009009009009009009
+experiment_01_internal_baseline,aa_property_sparsemax,Amino-acid properties,alpha,seed_1,777,lucky,internal_oof,169,0.5917986952469712,0.550869835352594,0.7413793103448276,0.36036036036036034
+experiment_01_internal_baseline,aa_property_sparsemax,Amino-acid properties,alpha,seed_2,42,ordinary,internal_oof,169,0.5855855855855855,0.5608884746815781,0.896551724137931,0.22522522522522523
+experiment_01_internal_baseline,aa_property_sparsemax,Amino-acid properties,alpha,seed_3,123,moderate,internal_oof,169,0.5900900900900902,0.49743709226467847,0.9137931034482759,0.08108108108108109
+experiment_01_internal_baseline,aa_property_sparsemax,Amino-acid properties,beta,seed_1,777,lucky,internal_oof,169,0.5691208449829139,0.5181733457595527,0.7931034482758621,0.24324324324324326
+experiment_01_internal_baseline,aa_property_sparsemax,Amino-acid properties,beta,seed_2,42,ordinary,internal_oof,169,0.427461944703324,0.48213730972351665,0.7931034482758621,0.17117117117117117
+experiment_01_internal_baseline,aa_property_sparsemax,Amino-acid properties,beta,seed_3,123,moderate,internal_oof,169,0.6006523765144455,0.5139018328673501,0.9827586206896551,0.04504504504504504
+experiment_01_internal_baseline,random_sparsemax,Random descriptor control,alpha,seed_1,777,lucky,internal_oof,169,0.593973283628456,0.5076110593351972,0.8620689655172413,0.15315315315315314
+experiment_01_internal_baseline,random_sparsemax,Random descriptor control,alpha,seed_2,42,ordinary,internal_oof,169,0.5740913327120224,0.4893600497048773,0.6724137931034483,0.3063063063063063
+experiment_01_internal_baseline,random_sparsemax,Random descriptor control,alpha,seed_3,123,moderate,internal_oof,169,0.40757999378689036,0.4350730040385213,0.4827586206896552,0.38738738738738737
+experiment_01_internal_baseline,random_sparsemax,Random descriptor control,beta,seed_1,777,lucky,internal_oof,169,0.6244175209692451,0.5050481515998757,0.7758620689655172,0.23423423423423423
+experiment_01_internal_baseline,random_sparsemax,Random descriptor control,beta,seed_2,42,ordinary,internal_oof,169,0.449363156259708,0.44097545821683753,0.6206896551724138,0.26126126126126126
+experiment_01_internal_baseline,random_sparsemax,Random descriptor control,beta,seed_3,123,moderate,internal_oof,169,0.3531376203789997,0.3992699596147872,0.6724137931034483,0.12612612612612611

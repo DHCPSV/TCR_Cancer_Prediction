@@ -1,0 +1,13 @@
+experiment_id,method_id,method_label,chain,split,seed_count,auc_median,auc_q1,auc_q3,balanced_accuracy_median
+experiment_03_external_generalisation,sceptr_entmax15,SCEPTR + Entmax-1.5 Attention MIL,alpha,internal_oof,9,0.91627834731283,0.8642435538987263,0.9574401988195093,0.833488661074868
+experiment_03_external_generalisation,sceptr_entmax15,SCEPTR + Entmax-1.5 Attention MIL,alpha,locked_external,9,0.42085235920852365,0.07686453576864535,0.6012176560121765,0.3535007610350076
+experiment_03_external_generalisation,sceptr_entmax15,SCEPTR + Entmax-1.5 Attention MIL,beta,internal_oof,9,0.8306927617272446,0.7927927927927928,0.8707673190431812,0.7735321528424977
+experiment_03_external_generalisation,sceptr_entmax15,SCEPTR + Entmax-1.5 Attention MIL,beta,locked_external,9,0.2916666666666667,0.1313813813813814,0.49099099099099097,0.3536036036036036
+experiment_03_external_generalisation,sceptr_softmax,SCEPTR + Softmax Attention MIL,alpha,internal_oof,9,0.9734389561975769,0.9721963342652997,0.9791860826343585,0.8732525629077353
+experiment_03_external_generalisation,sceptr_softmax,SCEPTR + Softmax Attention MIL,alpha,locked_external,9,0.5437595129375952,0.515220700152207,0.5585996955859969,0.4708904109589041
+experiment_03_external_generalisation,sceptr_softmax,SCEPTR + Softmax Attention MIL,beta,internal_oof,9,0.9310344827586207,0.9293258776017397,0.9405094749922336,0.8703013358185772
+experiment_03_external_generalisation,sceptr_softmax,SCEPTR + Softmax Attention MIL,beta,locked_external,9,0.4692192192192192,0.4268018018018018,0.4748498498498498,0.4466966966966967
+experiment_03_external_generalisation,sceptr_sparsemax,SCEPTR + Sparsemax Attention MIL,alpha,internal_oof,9,0.8361292326809568,0.7595526561043803,0.9453246349798075,0.7465051258154707
+experiment_03_external_generalisation,sceptr_sparsemax,SCEPTR + Sparsemax Attention MIL,alpha,locked_external,9,0.4790715372907154,0.05631659056316591,0.5996955859969558,0.4636605783866058
+experiment_03_external_generalisation,sceptr_sparsemax,SCEPTR + Sparsemax Attention MIL,beta,internal_oof,9,0.6908977943460703,0.6259707983845915,0.7378067722895308,0.6489593041317179
+experiment_03_external_generalisation,sceptr_sparsemax,SCEPTR + Sparsemax Attention MIL,beta,locked_external,9,0.4665915915915916,0.4286786786786787,0.5795795795795796,0.45983483483483484

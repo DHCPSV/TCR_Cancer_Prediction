@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68,<82"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tcr-cancer-prediction"
+version = "1.0.0"
+description = "TCR repertoire classification with ALICE-informed pooling"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+authors = [
+  { name = "Zhiyuan Guo", email = "alfreddhcp@outlook.com" },
+]
+license = { file = "LICENSE" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["analysis*", "pipeline*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+"analysis.experiment_01_internal_baseline" = ["resources/*.tsv"]

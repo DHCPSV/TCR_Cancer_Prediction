@@ -1,0 +1,5 @@
+scope,status,chain,pooling_normalisation,pca_fit_scope,internal_patients,external_patients,pc1_variance_ratio,pc2_variance_ratio,pc1_sign_rule,pc1_sign_flipped,pc2_sign_rule,pc2_sign_flipped
+preliminary_future_work,partial,alpha,l1,internal_only,169,109,0.43968132,0.06780226,internal_cancer_mean_ge_control,False,largest_absolute_loading_positive,False
+preliminary_future_work,partial,alpha,l2,internal_only,169,109,0.79460514,0.045018014,internal_cancer_mean_ge_control,True,largest_absolute_loading_positive,False
+preliminary_future_work,partial,beta,l1,internal_only,169,110,0.12226727,0.07012575,internal_cancer_mean_ge_control,True,largest_absolute_loading_positive,False
+preliminary_future_work,partial,beta,l2,internal_only,169,110,0.4849847,0.10325319,internal_cancer_mean_ge_control,False,largest_absolute_loading_positive,False

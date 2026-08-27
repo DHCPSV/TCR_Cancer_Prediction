@@ -1,0 +1,8 @@
+Project: TCRgrapher First_release
+Origin: https://github.com/KseniaMIPT/tcrgrapher
+Commit: e2e4347f7689dd21304f2e032c1fa74833367af2
+Package version: 1.0.0
+License: GPL-3.0-or-later (see LICENSE.md)
+
+Kept: R source, man pages, package metadata and human TRA/TRB model data.
+Excluded: nested Git metadata, tests, tutorials, GLIPH resources and mouse data.

@@ -1,0 +1,66 @@
+.venv/
+*.egg-info/
+build/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local data, working material, and internal project notes.
+data/**
+!data/README.md
+backup/
+temp/
+tmp/
+external_documents/
+/PROJECT_*.md
+.agents/
+.DS_Store
+
+# The compact VDJdb snapshot is redistributed with its own licence.
+third_party/vdjdb/2026-05-16/**
+!third_party/vdjdb/2026-05-16/release/
+!third_party/vdjdb/2026-05-16/release/vdjdb-2026-05-16/
+!third_party/vdjdb/2026-05-16/release/vdjdb-2026-05-16/LICENSE
+!third_party/vdjdb/2026-05-16/release/vdjdb-2026-05-16/vdjdb.slim.meta.txt
+!third_party/vdjdb/2026-05-16/release/vdjdb-2026-05-16/vdjdb.slim.txt
+
+# Large scientific artifacts stay local; compact manifests remain reviewable.
+artifacts/*
+!artifacts/manifests/
+!artifacts/manifests/*.csv
+!artifacts/manifests/*.json
+!artifacts/alice/
+artifacts/alice/*
+!artifacts/alice/*.csv
+!artifacts/alice/source_manifests/
+!artifacts/alice/source_manifests/*.csv
+
+# Keep aggregate tables, reports and figures; ignore patient predictions,
+# fold caches and checkpoints copied under result trees.
+results/**
+!results/**/
+!results/**/*.png
+!results/**/*.svg
+!results/**/*.pdf
+!results/**/*.md
+!results/**/*.csv
+# Patient-level outputs belong under ignored artifacts/runs, even if a future
+# report accidentally writes one beneath results.
+results/**/*prediction*.csv
+results/**/*patient*.csv
+results/**/*subject*.csv
+results/**/*sample*.csv
+results/**/*coordinate*.csv
+
+# Local R state.
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+.r-library/
+renv/library/
+old/
+OLD/

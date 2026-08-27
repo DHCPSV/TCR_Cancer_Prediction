@@ -1,0 +1,4 @@
+phenomenon,chain,model,method_id,seed_id,seed_value,internal_auc,external_auc,used_for_model_selection
+"Internal separation, external collapse",alpha,Softmax,sceptr_softmax,S03,12906138414127427065,0.980273376825101,0.515220700152207,False
+Reversed external ranking,alpha,Entmax-1.5,sceptr_entmax15,S04,6902826956892357559,0.9694004349176762,0.1251902587519026,False
+"Weak internal separation, external alignment",alpha,Sparsemax,sceptr_sparsemax,S09,12293968614973973933,0.587138863000932,0.7987062404870623,False

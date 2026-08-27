@@ -1,0 +1,17 @@
+experiment_id,method_id,method_label,chain,split,seed_count,auc_median,auc_q1,auc_q3,balanced_accuracy_median
+experiment_04_alice_model,aa_property_l1,Amino-acid properties + ALICE L1,alpha,internal_oof,3,0.5548306927617271,0.5457440198819509,0.587138863000932,0.538210624417521
+experiment_04_alice_model,aa_property_l1,Amino-acid properties + ALICE L1,alpha,locked_external,3,0.6027397260273972,0.5840943683409436,0.660007610350076,0.5972222222222222
+experiment_04_alice_model,aa_property_l2,Amino-acid properties + ALICE L2,alpha,internal_oof,3,0.44625660142901524,0.443771357564461,0.4911463187325256,0.44058713886300094
+experiment_04_alice_model,aa_property_l2,Amino-acid properties + ALICE L2,alpha,locked_external,3,0.17389649923896502,0.17142313546423138,0.25133181126331816,0.2775875190258752
+experiment_04_alice_model,atchley_l1,Atchley factors + ALICE L1,alpha,internal_oof,3,0.6369990680335509,0.6291550170860516,0.6373097235166201,0.5427151289220254
+experiment_04_alice_model,atchley_l1,Atchley factors + ALICE L1,alpha,locked_external,3,0.7899543378995434,0.75,0.7928082191780822,0.5972222222222222
+experiment_04_alice_model,atchley_l2,Atchley factors + ALICE L2,alpha,internal_oof,3,0.49005902454178313,0.47677850264057153,0.5056694625660142,0.4704100652376515
+experiment_04_alice_model,atchley_l2,Atchley factors + ALICE L2,alpha,locked_external,3,0.5235920852359208,0.3613013698630137,0.535958904109589,0.4992389649923896
+experiment_04_alice_model,kidera_l1,Kidera factors + ALICE L1,alpha,internal_oof,3,0.5750232991612302,0.5659366262814538,0.6025163094128612,0.538210624417521
+experiment_04_alice_model,kidera_l1,Kidera factors + ALICE L1,alpha,locked_external,3,0.723744292237443,0.680365296803653,0.7460045662100456,0.5972222222222222
+experiment_04_alice_model,kidera_l2,Kidera factors + ALICE L2,alpha,internal_oof,3,0.4863311587449518,0.4821373097235166,0.5078440509474993,0.48306927617272444
+experiment_04_alice_model,kidera_l2,Kidera factors + ALICE L2,alpha,locked_external,3,0.4657534246575343,0.29718417047184176,0.512937595129376,0.55441400304414
+experiment_04_alice_model,sceptr_l1,SCEPTR + ALICE L1,alpha,internal_oof,3,0.7214973594283939,0.7211478720099409,0.7228176452314383,0.6887232059645854
+experiment_04_alice_model,sceptr_l1,SCEPTR + ALICE L1,alpha,locked_external,3,0.8226788432267884,0.8215372907153728,0.8278158295281584,0.7709284627092846
+experiment_04_alice_model,sceptr_l2,SCEPTR + ALICE L2,alpha,internal_oof,3,0.797918608263436,0.7962100031065549,0.7992388940664804,0.7112457284871079
+experiment_04_alice_model,sceptr_l2,SCEPTR + ALICE L2,alpha,locked_external,3,0.9596651445966514,0.957572298325723,0.964041095890411,0.7848173515981736

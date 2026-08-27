@@ -1,0 +1,13 @@
+set,intersection,count,denominator,fraction
+ALICE q Top100,VDJdb match,53,100,0.53
+ALICE q Top100,No VDJdb match,47,100,0.47
+Cancer-directed Top50,In q Top100 + VDJdb match,4,50,0.08
+Cancer-directed Top50,In q Top100 + no VDJdb match,21,50,0.42
+Cancer-directed Top50,Outside q Top100 + VDJdb match,9,50,0.18
+Cancer-directed Top50,Outside q Top100 + no VDJdb match,16,50,0.32
+Control-directed Top50,In q Top100 + VDJdb match,27,50,0.54
+Control-directed Top50,In q Top100 + no VDJdb match,4,50,0.08
+Control-directed Top50,Outside q Top100 + VDJdb match,16,50,0.32
+Control-directed Top50,Outside q Top100 + no VDJdb match,3,50,0.06
+ALICE q Top100: neither direction,VDJdb match,22,100,0.22
+ALICE q Top100: neither direction,No VDJdb match,22,100,0.22
