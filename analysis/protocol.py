@@ -144,7 +144,8 @@ def atomic_csv(frame: pd.DataFrame, path: str | Path) -> None:
     output = repo_path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(output.suffix + ".tmp")
-    frame.to_csv(temporary, index=False)
+    with temporary.open("w", encoding="utf-8", newline="\n") as handle:
+        frame.to_csv(handle, index=False, lineterminator="\n")
     temporary.replace(output)
 
 

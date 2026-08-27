@@ -312,7 +312,9 @@ def freeze() -> dict:
     }
     FREEZE.parent.mkdir(parents=True, exist_ok=True)
     temporary = FREEZE.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     temporary.replace(FREEZE)
     return payload
 

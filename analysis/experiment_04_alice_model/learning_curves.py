@@ -147,6 +147,7 @@ def write_fold_history(
         )
         + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     temporary.replace(binding)
 

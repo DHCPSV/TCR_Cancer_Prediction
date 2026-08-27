@@ -57,7 +57,9 @@ def main(argv: list[str] | None = None) -> None:
         "file_count": len(manifest["files"]),
     }
     temporary = report_cache.RELEASE_MANIFEST.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(release, indent=2) + "\n", encoding="utf-8")
+    temporary.write_text(
+        json.dumps(release, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     temporary.replace(report_cache.RELEASE_MANIFEST)
     print(output)
     print(release["zip_sha256"])

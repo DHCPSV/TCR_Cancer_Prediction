@@ -113,7 +113,11 @@ def _write_cache(row: dict, olga: str) -> None:
         "metadata_sha256": protocol.sha256(metadata),
     }
     temporary = sidecar.with_suffix(sidecar.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     temporary.replace(sidecar)
 
 
@@ -513,7 +517,11 @@ def write_runtime_freeze(
         for relative in required:
             files[relative] = protocol.sha256(protocol.REPO / relative)
     temporary = FREEZE.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     temporary.replace(FREEZE)
     protocol._VERIFIED_CHECKPOINTS.discard(EXPERIMENT_ID)
     for split in splits:

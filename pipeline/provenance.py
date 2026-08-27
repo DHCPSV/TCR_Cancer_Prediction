@@ -106,7 +106,11 @@ def sidecar_path(output: Path) -> Path:
 def _atomic_json(payload: Mapping, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(f"{path}.tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     temporary.replace(path)
 
 

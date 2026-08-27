@@ -22,7 +22,8 @@ def write(frame: pd.DataFrame, name: str) -> None:
     ROOT.mkdir(parents=True, exist_ok=True)
     target = ROOT / name
     temporary = Path(f"{target}.tmp")
-    frame.to_csv(temporary, index=False)
+    with temporary.open("w", encoding="utf-8", newline="\n") as handle:
+        frame.to_csv(handle, index=False, lineterminator="\n")
     temporary.replace(target)
 
 

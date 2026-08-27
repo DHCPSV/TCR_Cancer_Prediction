@@ -192,7 +192,8 @@ def run(role: str, chain: str, overwrite: bool) -> dict[str, int]:
         target.parent.mkdir(parents=True, exist_ok=True)
         result = pd.concat(pieces, ignore_index=True)
         temporary = Path(f"{target}.tmp")
-        result.to_csv(temporary, sep="\t", index=False)
+        with temporary.open("w", encoding="utf-8", newline="\n") as handle:
+            result.to_csv(handle, sep="\t", index=False, lineterminator="\n")
         temporary.replace(target)
         provenance.write_sidecar(
             target,
