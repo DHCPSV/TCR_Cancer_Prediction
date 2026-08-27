@@ -408,6 +408,7 @@ def write_runtime_freeze(
     include_descriptors: bool = False,
     require_core_checkpoints: bool = True,
     require_future_checkpoints: bool = True,
+    require_no_hard_gate_checkpoints: bool = False,
 ) -> dict:
     from analysis.experiment_04_alice_model import methods
 
@@ -475,7 +476,10 @@ def write_runtime_freeze(
         len(method.chains) * len(method.seed_ids) * 5
         for method in methods.NO_HARD_GATE_METHODS
     )
-    if require_core_checkpoints and len(no_hard_gate_checkpoints) != expected_no_hard_gate_count:
+    if (
+        require_no_hard_gate_checkpoints
+        and len(no_hard_gate_checkpoints) != expected_no_hard_gate_count
+    ):
         raise ValueError(
             "No-hard-gate checkpoint coverage is "
             f"{len(no_hard_gate_checkpoints)}, expected {expected_no_hard_gate_count}"

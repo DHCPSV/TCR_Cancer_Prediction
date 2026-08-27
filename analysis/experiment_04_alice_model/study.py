@@ -630,6 +630,15 @@ def _run_internal(spec: _Study, device: torch.device) -> pd.DataFrame:
             require_core_checkpoints=True,
             require_future_checkpoints=False,
         )
+    elif spec is _NO_HARD_GATE:
+        from analysis.experiment_04_alice_model.prepare import write_runtime_freeze
+
+        write_runtime_freeze(
+            ("internal",),
+            require_core_checkpoints=True,
+            require_future_checkpoints=False,
+            require_no_hard_gate_checkpoints=True,
+        )
     elif spec is _REPRESENTATION:
         from analysis.experiment_04_alice_model.prepare import write_runtime_freeze
 

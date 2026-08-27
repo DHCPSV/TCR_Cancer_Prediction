@@ -4,6 +4,7 @@ import ast
 import contextlib
 import csv
 import io
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -15,6 +16,8 @@ from analysis.experiment_01_internal_baseline import run as exp1_run
 from analysis.experiment_02_seed_and_attention_normalisation import run as exp2_run
 from analysis.experiment_03_external_generalisation import run as exp3_run
 from analysis.experiment_04_alice_model import run as exp4_run
+from analysis.experiment_04_alice_model import methods as exp4_methods
+from analysis.experiment_04_alice_model import prepare as exp4_prepare
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -133,6 +136,33 @@ def test_public_result_tables_are_aggregated() -> None:
         assert not fields & patient_fields, path
 
 
+def test_no_hard_gate_freeze_requirement_is_independent() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        with (
+            patch.object(exp4_prepare, "FREEZE", root / "freeze.json"),
+            patch.object(exp4_methods, "MAIN_METHODS", ()),
+            patch.object(exp4_methods, "REPRESENTATION_METHODS", ()),
+            patch.object(
+                exp4_methods,
+                "NO_HARD_GATE_CHECKPOINTS",
+                root / "no_hard_gate",
+            ),
+        ):
+            exp4_prepare.write_runtime_freeze(
+                (),
+                require_core_checkpoints=True,
+                require_future_checkpoints=True,
+            )
+            with unittest.TestCase().assertRaises(ValueError):
+                exp4_prepare.write_runtime_freeze(
+                    (),
+                    require_core_checkpoints=True,
+                    require_future_checkpoints=True,
+                    require_no_hard_gate_checkpoints=True,
+                )
+
+
 class ArchitectureTests(unittest.TestCase):
     test_each_experiment_has_one_command_line_entry = staticmethod(
         test_each_experiment_has_one_command_line_entry
@@ -154,4 +184,7 @@ class ArchitectureTests(unittest.TestCase):
     )
     test_public_result_tables_are_aggregated = staticmethod(
         test_public_result_tables_are_aggregated
+    )
+    test_no_hard_gate_freeze_requirement_is_independent = staticmethod(
+        test_no_hard_gate_freeze_requirement_is_independent
     )
