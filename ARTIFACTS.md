@@ -3,12 +3,12 @@
 The report cache is a separate download for reproducing the published tables
 and figures without repeating embedding or training.
 
-Release details will be added here after the ZIP is uploaded:
+Release details:
 
 - Download: pending
-- File: `tcr-cancer-prediction-v1.0-report-cache.zip`
-- Size: generated with the release package
-- SHA-256: generated with the release package
+- File: `TCR_Cancer_Prediction_V1_report_cache.zip`
+- Size: 12,715,779 bytes
+- SHA-256: `f5f744c9c5e766ef8ea17669dbd0d3221a813116802686ef3e1ba198d12c1765`
 
 After downloading, extract the ZIP into the repository root and run:
 
