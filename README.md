@@ -47,6 +47,12 @@ per-TCR ALICE output.
 
 1. Download the ZIP listed in [ARTIFACTS.md](ARTIFACTS.md).
 2. Extract it into the repository root without changing its directory layout.
+   On Windows PowerShell, run this command from the repository root:
+
+```powershell
+Expand-Archive -LiteralPath .\TCR_Cancer_Prediction_V1_report_cache.zip -DestinationPath . -Force
+```
+
 3. Verify it:
 
 ```powershell

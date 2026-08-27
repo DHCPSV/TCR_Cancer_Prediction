@@ -13,6 +13,7 @@ Release details:
 After downloading, extract the ZIP into the repository root and run:
 
 ```powershell
+Expand-Archive -LiteralPath .\TCR_Cancer_Prediction_V1_report_cache.zip -DestinationPath . -Force
 python -m pipeline.verify_report_cache
 ```
 
