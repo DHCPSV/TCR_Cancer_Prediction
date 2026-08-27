@@ -109,7 +109,11 @@ def prepare_alice_inputs(split: str, args: PreparationOptions) -> tuple[Path, ..
         raise ValueError(f"Unknown data split: {split}")
     alice_preparation.prepare(split, args)
     frozen_splits = ("internal",) if split == "internal" else ("internal", "external")
-    alice_preparation.write_runtime_freeze(frozen_splits)
+    alice_preparation.write_runtime_freeze(
+        frozen_splits,
+        require_core_checkpoints=(split == "external"),
+        require_future_checkpoints=False,
+    )
     return alice_input_states(split)
 
 
@@ -129,6 +133,8 @@ def prepare_future_work_inputs(split: str, args: PreparationOptions) -> tuple[Pa
     alice_preparation.write_runtime_freeze(
         frozen_splits,
         include_descriptors=True,
+        require_core_checkpoints=True,
+        require_future_checkpoints=(split == "external"),
     )
     return alice_input_states(split) + (
         protocol.MANIFESTS / f"representation_comparison_{split}.csv",
@@ -523,7 +529,7 @@ def _verify_inputs(spec: StudySpec, split: str, *, internal_stage: bool) -> None
             and not (spec is HARD_GATE_STUDY and internal_stage)
         ),
     )
-    if spec is FUTURE_WORK_STUDY:
+    if spec is FUTURE_WORK_STUDY and not internal_stage:
         verify_future_work_checkpoint_freeze()
 
 
@@ -631,11 +637,20 @@ def internal(spec: StudySpec, device: torch.device) -> pd.DataFrame:
     if spec is HARD_GATE_STUDY:
         from analysis.experiment_04_alice_model.prepare import write_runtime_freeze
 
-        write_runtime_freeze(("internal",))
+        write_runtime_freeze(
+            ("internal",),
+            require_core_checkpoints=True,
+            require_future_checkpoints=False,
+        )
     elif spec is FUTURE_WORK_STUDY:
         from analysis.experiment_04_alice_model.prepare import write_runtime_freeze
 
-        write_runtime_freeze(("internal",), include_descriptors=True)
+        write_runtime_freeze(
+            ("internal",),
+            include_descriptors=True,
+            require_core_checkpoints=True,
+            require_future_checkpoints=True,
+        )
     progress.summary(
         reused_folds=reused_folds,
         trained_folds=total_folds - reused_folds,

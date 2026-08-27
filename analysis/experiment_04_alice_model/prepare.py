@@ -408,6 +408,8 @@ def write_runtime_freeze(
     splits: tuple[str, ...],
     *,
     include_descriptors: bool = False,
+    require_core_checkpoints: bool = True,
+    require_future_checkpoints: bool = True,
 ) -> dict:
     from analysis.experiment_04_alice_model import core, study
 
@@ -426,7 +428,7 @@ def write_runtime_freeze(
         len(method.chains) * len(method.seed_ids) * 5
         for method in core.METHODS
     )
-    if len(checkpoints) != expected_core_count:
+    if require_core_checkpoints and len(checkpoints) != expected_core_count:
         raise ValueError(
             f"Hard-gate checkpoint coverage is {len(checkpoints)}, expected {expected_core_count}"
         )
@@ -454,13 +456,17 @@ def write_runtime_freeze(
         len(method.chains) * len(method.seed_ids) * 5
         for method in study.FUTURE_WORK_METHODS
     )
-    if len(future_checkpoints) != expected_future_count:
+    if require_future_checkpoints and len(future_checkpoints) != expected_future_count:
         raise ValueError(
             "Representation future-work checkpoint coverage is "
             f"{len(future_checkpoints)}, expected {expected_future_count}"
         )
     payload.setdefault("future_work", {})["representation_dependence"] = {
-        "status": "preliminary_partial",
+        "status": (
+            "preliminary_partial"
+            if len(future_checkpoints) == expected_future_count
+            else "pending"
+        ),
         "checkpoint_root": checkpoint_root.relative_to(protocol.REPO).as_posix(),
         "checkpoint_method_ids": future_method_ids,
         "expected_checkpoint_count": expected_future_count,
