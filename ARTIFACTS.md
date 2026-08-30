@@ -11,7 +11,7 @@ preprocessing, embedding, ALICE and training outputs. It supports two uses:
 
 Release details:
 
-- Download: pending
+- Download: https://1drv.ms/u/c/c2c6d65a2073ac72/IQADw2U6f7EdQ5lh1PHqXku7AV1APGtWD79rmTAvTJe8MtQ?e=bbTfJ5
 - File: `TCR_Cancer_Prediction_V1_reproduction_cache.zip`
 - Compressed size: 6,953,036,402 bytes (6.48 GiB)
 - Extracted size: 8,669,878,235 bytes (8.07 GiB)
