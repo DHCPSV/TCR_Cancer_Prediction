@@ -13,7 +13,7 @@ from analysis.experiment_02_seed_and_attention_normalisation import (
     normalizer_study,
     report,
 )
-from pipeline import report_cache, workflow
+from pipeline import reproduction_cache, workflow
 
 
 EXPERIMENT_ID = "experiment_02_seed_and_attention_normalisation"
@@ -36,7 +36,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.input_mode == "cached":
         if args.stage == "internal":
             parser.error("cached mode contains report inputs, not training inputs")
-        report_cache.verify()
+        reproduction_cache.verify_layout()
         if args.stage in ("self-test", "all"):
             layer_seed_study.self_test()
             normalizer_study.self_test()

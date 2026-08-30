@@ -9,7 +9,7 @@ if __package__ in (None, ""):
 
 from analysis import protocol, training
 from analysis.experiment_03_external_generalisation import pca, report, study
-from pipeline import report_cache, workflow
+from pipeline import reproduction_cache, workflow
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.input_mode == "cached":
         if args.stage in {"prepare", "freeze"}:
             parser.error("cached mode contains report inputs, not preparation inputs")
-        report_cache.verify()
+        reproduction_cache.verify_layout()
         if args.stage in {"self-test", "all"}:
             study.self_test()
             pca.self_test()

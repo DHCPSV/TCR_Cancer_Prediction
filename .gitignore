@@ -63,7 +63,7 @@ artifacts/*
 !artifacts/manifests/representations.csv
 !artifacts/manifests/samples.csv
 !artifacts/manifests/subjects.csv
-!artifacts/report_cache_release.json
+!artifacts/reproduction_cache_release.json
 !artifacts/alice/
 artifacts/alice/*
 !artifacts/alice/external_file_manifest.csv

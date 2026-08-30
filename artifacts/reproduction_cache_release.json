@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "package_type": "reproduction_cache",
+  "version": "v1.0",
+  "compatible_commit": "",
+  "download_url": "",
+  "zip_name": "TCR_Cancer_Prediction_V1_reproduction_cache.zip",
+  "zip_bytes": 0,
+  "zip_sha256": "",
+  "unpacked_bytes": 0,
+  "contents_manifest": "artifacts/reproduction_cache_contents.json",
+  "contents_manifest_sha256": "",
+  "file_count": 0
+}

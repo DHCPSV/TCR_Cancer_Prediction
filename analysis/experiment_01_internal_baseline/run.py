@@ -11,7 +11,7 @@ if __package__ in (None, ""):
 
 from analysis import protocol, training
 from analysis.experiment_01_internal_baseline import prepare, report, study
-from pipeline import report_cache, workflow
+from pipeline import reproduction_cache, workflow
 
 
 def _ready() -> None:
@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.input_mode == "cached":
         if args.stage == "internal":
             parser.error("cached mode contains report inputs, not training inputs")
-        report_cache.verify()
+        reproduction_cache.verify_layout()
         if args.stage in {"self-test", "all"}:
             prepare.self_test()
             study.self_test()

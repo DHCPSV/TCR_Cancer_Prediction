@@ -38,25 +38,26 @@ Experiments 1 and 2 use internal data only. Experiment 3 reuses the frozen
 Experiment 2 checkpoints. Experiment 4 prepares ALICE evidence before fitting
 its patient-level classifiers.
 
-### Rebuild reports from the published cache
+### Use the published reproduction cache
 
-The optional report cache contains checkpoints, training histories,
-patient-level predictions and the small intermediate tables needed by the
-reports. It does not contain raw repertoires, patient TCR tables, embeddings or
-per-TCR ALICE output.
+The optional reproduction cache contains the prepared patient TCR tables,
+TCR representations, ALICE inputs and outputs, provenance records,
+checkpoints, training histories, patient-level predictions and the
+intermediate tables used by the reports. Raw repertoires and generated
+`results/` are not included.
 
 1. Download the ZIP listed in [ARTIFACTS.md](ARTIFACTS.md).
 2. Extract it into the repository root without changing its directory layout.
    On Windows PowerShell, run this command from the repository root:
 
 ```powershell
-Expand-Archive -LiteralPath .\TCR_Cancer_Prediction_V1_report_cache.zip -DestinationPath . -Force
+Expand-Archive -LiteralPath .\TCR_Cancer_Prediction_V1_reproduction_cache.zip -DestinationPath . -Force
 ```
 
 3. Verify it:
 
 ```powershell
-python -m pipeline.verify_report_cache
+python -m pipeline.verify_reproduction_cache
 ```
 
 4. Rebuild the reports:
@@ -68,8 +69,14 @@ python -m analysis.experiment_03_external_generalisation.run --input-mode cached
 python -m analysis.experiment_04_alice_model.run --input-mode cached
 ```
 
-Cached mode never prepares raw data or trains models. Training stages such as
-`internal`, `prepare` and `validation` are rejected in cached mode.
+Cached mode uses the stored predictions and other report inputs. It never
+prepares raw data or trains models, and training stages such as `internal`,
+`prepare` and `validation` are rejected.
+
+The same extracted cache also supports the raw workflow. When the matching raw
+repertoires are present under `data/raw/`, provenance checks reuse unchanged
+patient TCR tables, representations and ALICE intermediate files instead of
+recomputing them. Existing compatible checkpoints are reused as well.
 
 ## Environment
 
@@ -99,8 +106,8 @@ Use `--rscript` if R is installed elsewhere.
 
 ## Raw data
 
-Raw repertoires are not included in Git or in the report cache. Place approved
-inputs under:
+Raw repertoires are not included in Git or in the reproduction cache. Place
+approved inputs under:
 
 ```text
 data/raw/
@@ -111,9 +118,9 @@ data/raw/
 ```
 
 See [data/README.md](data/README.md) for the expected cohorts. Subject IDs and
-CDR3 sequences in the published manifests and report cache come from approved
-public data sources; they are study identifiers rather than direct personal
-identifiers.
+CDR3 sequences in the published manifests and reproduction cache come from
+approved public data sources; they are study identifiers rather than direct
+personal identifiers.
 
 ## Repository layout
 
@@ -123,7 +130,7 @@ pipeline/       manifest building, data preparation, embeddings and cache checks
 tests/          portable tests and optional cached-result checks
 results/        aggregate CSV files and publication figures
 third_party/    pinned ALICE/OLGA code and the derived VDJdb snapshot
-tools/          release utility for building the optional report cache
+tools/          release utility for building the optional reproduction cache
 ```
 
 Inside each experiment, `methods.py` contains the model definitions,
@@ -138,8 +145,8 @@ Run portable tests with:
 python -m unittest discover -s tests -v
 ```
 
-Set `TCR_REQUIRE_REPORT_CACHE=1` to make absence of the optional cache a test
-failure instead of a skip.
+Set `TCR_REQUIRE_REPRODUCTION_CACHE=1` to make absence of the optional cache a
+test failure instead of a skip.
 
 ## Code provenance and third-party material
 
@@ -150,7 +157,8 @@ Project-specific code is kept in `analysis/`, `pipeline/`, `tests/` and
   and training path build on Jan Pytel's
   [TCR-Cancer-Prediction](https://github.com/pytelj/TCR-Cancer-Prediction)
   project. The workflow has since been reorganised for fixed folds, explicit
-  seed studies, external transfer and the report-cache interface used here.
+  seed studies, external transfer and the reproduction-cache interface used
+  here.
 - `third_party/alice/tcrgrapher/` is a pinned snapshot of the external
   [TCRgrapher](https://github.com/KseniaMIPT/tcrgrapher) source at commit
   `e2e4347f7689dd21304f2e032c1fa74833367af2`.

@@ -21,5 +21,7 @@ patients that are absent from the internal cohort.
 
 Do not rename subjects or chain files after placement. The pipeline records
 their repository-relative paths and identities in `artifacts/manifests/` and
-uses manifest and checksum records to check the data boundary. Raw archives,
-extracted repertoires and derived patient data remain outside version control.
+uses manifest and checksum records to check the data boundary. Raw archives
+and extracted repertoires remain outside version control and are not included
+in the reproduction cache. Derived patient data remain outside Git and are
+distributed only through the optional reproduction cache.

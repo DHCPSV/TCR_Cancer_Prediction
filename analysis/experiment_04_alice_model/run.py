@@ -10,7 +10,7 @@ if __package__ in (None, ""):
 
 from analysis import training
 from analysis.experiment_04_alice_model import report as reporting, study
-from pipeline import report_cache
+from pipeline import reproduction_cache
 
 
 WINDOWS_RSCRIPT = Path(r"C:\Program Files\R\R-4.3.3\bin\Rscript.exe")
@@ -97,7 +97,7 @@ def main(argv: list[str] | None = None) -> None:
             raise SystemExit(
                 "cached mode contains report inputs, not ALICE preparation or training inputs"
             )
-        report_cache.verify()
+        reproduction_cache.verify_layout()
         if args.stage in {"self-test", "all"}:
             self_test()
         if args.stage in {"report", "all"}:

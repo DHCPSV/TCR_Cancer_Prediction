@@ -16,15 +16,17 @@ from analysis.experiment_03_external_generalisation import pca as exp3_pca
 from analysis.experiment_03_external_generalisation import study as exp3_study
 from analysis.experiment_04_alice_model import methods as exp4_methods
 from analysis.experiment_04_alice_model.methods import HARD_THRESHOLD, alice_pool
-from pipeline import report_cache
+from pipeline import reproduction_cache
 
 
 REPO = Path(__file__).resolve().parents[1]
-REQUIRE_CACHE = os.environ.get("TCR_REQUIRE_REPORT_CACHE") == "1"
-if not report_cache.CONTENTS_MANIFEST.exists():
+REQUIRE_CACHE = os.environ.get("TCR_REQUIRE_REPRODUCTION_CACHE") == "1"
+if not reproduction_cache.CONTENTS_MANIFEST.exists():
     if REQUIRE_CACHE:
-        raise RuntimeError("TCR_REQUIRE_REPORT_CACHE=1 but the report cache is absent")
-    raise unittest.SkipTest("optional report cache is not installed")
+        raise RuntimeError(
+            "TCR_REQUIRE_REPRODUCTION_CACHE=1 but the reproduction cache is absent"
+        )
+    raise unittest.SkipTest("optional reproduction cache is not installed")
 
 
 PREDICTION_METRIC_PAIRS = {
@@ -94,8 +96,20 @@ def checkpoint_grid(root: Path) -> set[tuple[str, str, str, int]]:
 
 
 def test_cache_manifest_and_checkpoint_payloads() -> None:
-    summary = report_cache.verify(check_checkpoints=True)
+    summary = reproduction_cache.verify(check_checkpoints=True)
     assert summary["file_count"] > 0
+
+
+def test_cache_contains_reusable_pipeline_inputs() -> None:
+    selected = {
+        path.relative_to(REPO).as_posix()
+        for path in reproduction_cache.selected_files()
+    }
+    for root in reproduction_cache.REUSABLE_INPUT_DIRS:
+        prefix = root.rstrip("/") + "/"
+        assert any(path.startswith(prefix) for path in selected), root
+    assert not any(path.startswith("data/raw/") for path in selected)
+    assert not any(path.startswith("results/") for path in selected)
 
 
 def test_all_checkpoints_strict_load() -> None:
@@ -107,7 +121,7 @@ def test_all_checkpoints_strict_load() -> None:
             + exp4_methods.REPRESENTATION_METHODS
         )
     }
-    for root_name in report_cache.CHECKPOINT_DIRS:
+    for root_name in reproduction_cache.CHECKPOINT_DIRS:
         for path in (REPO / root_name).rglob("*.pt"):
             payload = torch.load(path, map_location="cpu", weights_only=True)
             state = payload["model_state"]
@@ -293,6 +307,9 @@ def test_freeze_contracts() -> None:
 class CachedResultTests(unittest.TestCase):
     test_cache_manifest_and_checkpoint_payloads = staticmethod(
         test_cache_manifest_and_checkpoint_payloads
+    )
+    test_cache_contains_reusable_pipeline_inputs = staticmethod(
+        test_cache_contains_reusable_pipeline_inputs
     )
     test_all_checkpoints_strict_load = staticmethod(test_all_checkpoints_strict_load)
     test_metrics_recalculate_from_predictions = staticmethod(

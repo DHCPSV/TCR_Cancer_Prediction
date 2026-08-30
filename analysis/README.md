@@ -26,4 +26,5 @@ Shared modules are deliberately small:
 | 4 | `internal`, `validation`, `report`, `all` | `future-work` |
 
 All runners also support `self-test` and `--input-mode {raw,cached}`. Cached
-mode accepts report stages only and does not prepare data or train models.
+mode reads the extracted reproduction cache, accepts report stages only and
+does not prepare data or train models.

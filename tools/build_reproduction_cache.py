@@ -1,4 +1,4 @@
-"""Build the optional report-cache ZIP from the local completed project."""
+"""Build the optional reproduction-cache ZIP from a completed project."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 
 from analysis import protocol
-from pipeline import report_cache
+from pipeline import reproduction_cache
 
 
 def sha256(path: Path) -> str:
@@ -32,35 +32,51 @@ def main(argv: list[str] | None = None) -> None:
     except ValueError:
         pass
     else:
-        raise ValueError("Write the report-cache ZIP outside the repository")
+        raise ValueError("Write the reproduction-cache ZIP outside the repository")
     if output.exists():
         raise FileExistsError(f"Refusing to overwrite {output}")
 
-    files = report_cache.selected_files()
-    manifest = report_cache.write_contents_manifest(files)
-    contents_path = report_cache.CONTENTS_MANIFEST
+    files = reproduction_cache.selected_files()
+    manifest = reproduction_cache.write_contents_manifest(files)
+    contents_path = reproduction_cache.CONTENTS_MANIFEST
+    unpacked_bytes = sum(path.stat().st_size for path in files) + contents_path.stat().st_size
     output.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(output, "x", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+    completed_bytes = 0
+    next_update = 0.1
+    with zipfile.ZipFile(
+        output,
+        "x",
+        compression=zipfile.ZIP_DEFLATED,
+        compresslevel=6,
+        allowZip64=True,
+    ) as archive:
         for path in files + [contents_path]:
             archive.write(path, path.relative_to(protocol.REPO).as_posix())
+            completed_bytes += path.stat().st_size
+            fraction = completed_bytes / max(1, unpacked_bytes)
+            if fraction >= next_update:
+                print(f"[reproduction-cache] {fraction:.0%}", flush=True)
+                next_update += 0.1
 
     release = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "package_type": "reproduction_cache",
         "version": args.version,
         "compatible_commit": args.commit,
         "download_url": "",
         "zip_name": output.name,
         "zip_bytes": output.stat().st_size,
         "zip_sha256": sha256(output),
+        "unpacked_bytes": unpacked_bytes,
         "contents_manifest": contents_path.relative_to(protocol.REPO).as_posix(),
         "contents_manifest_sha256": protocol.sha256(contents_path),
         "file_count": len(manifest["files"]),
     }
-    temporary = report_cache.RELEASE_MANIFEST.with_suffix(".json.tmp")
+    temporary = reproduction_cache.RELEASE_MANIFEST.with_suffix(".json.tmp")
     temporary.write_text(
         json.dumps(release, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
-    temporary.replace(report_cache.RELEASE_MANIFEST)
+    temporary.replace(reproduction_cache.RELEASE_MANIFEST)
     print(output)
     print(release["zip_sha256"])
 
