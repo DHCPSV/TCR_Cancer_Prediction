@@ -28,7 +28,7 @@ significant hit       q < 0.001
 models                humanTRA / humanTRB
 ```
 
-ALICE uses the repository's supported Windows environment: CPython 3.12 in
+ALICE uses the repository's supported Windows environment: Python 3.12 in
 the root `.venv`, `olga==1.2.4` from `requirements.txt`, and system R 4.3.3
 installed at `C:\Program Files\R\R-4.3.3`. Activate the local Python
 environment before installing or running the worker. The Experiment 4 runner

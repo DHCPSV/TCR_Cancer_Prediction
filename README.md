@@ -1,4 +1,4 @@
-# TCR repertoire classification with ALICE-informed pooling
+# Identifying a T cell receptor sequence signal in the blood of individuals with lung cancer
 
 This repository contains four patient-level cancer-classification experiments
 using T-cell receptor (TCR) repertoires.
@@ -73,7 +73,7 @@ Cached mode never prepares raw data or trains models. Training stages such as
 
 ## Environment
 
-The tested setup is 64-bit CPython 3.12 on Windows 11. The full raw workflow
+The tested setup is 64-bit Python 3.12 on Windows 11. The full raw workflow
 uses an NVIDIA CUDA 12.8 build of PyTorch and R 4.3.3 for ALICE.
 
 ```powershell
@@ -141,6 +141,31 @@ python -m unittest discover -s tests -v
 Set `TCR_REQUIRE_REPORT_CACHE=1` to make absence of the optional cache a test
 failure instead of a skip.
 
+## Code provenance and third-party material
+
+Project-specific code is kept in `analysis/`, `pipeline/`, `tests/` and
+`tools/`. The following external lineage and directory boundaries apply:
+
+- The baseline developed for Experiment 1 and the non-ALICE representation
+  and training path build on Jan Pytel's
+  [TCR-Cancer-Prediction](https://github.com/pytelj/TCR-Cancer-Prediction)
+  project. The workflow has since been reorganised for fixed folds, explicit
+  seed studies, external transfer and the report-cache interface used here.
+- `third_party/alice/tcrgrapher/` is a pinned snapshot of the external
+  [TCRgrapher](https://github.com/KseniaMIPT/tcrgrapher) source at commit
+  `e2e4347f7689dd21304f2e032c1fa74833367af2`.
+- `third_party/alice/olga/` contains the external OLGA 1.2.4 source and the
+  human TRA/TRB generation models used by Experiment 4. Its upstream source is
+  [OLGA](https://github.com/statbiophys/OLGA).
+- `third_party/alice/alice_worker.R` is project-specific integration code. It
+  connects the pinned TCRgrapher implementation to OLGA and the supported
+  Windows workflow; it is not an upstream ALICE file.
+- `third_party/vdjdb/` contains a fixed, derived VDJdb data snapshot used by
+  the family lookup. It is external data rather than project-owned code.
+- SCEPTR is installed as a Python dependency. Its source is not copied into
+  this repository; `pipeline/sceptr_adapter.py` is project-specific adapter
+  code.
+
 ## Evaluation boundary
 
 - Internal evaluation uses one held-out prediction per patient from the fixed
@@ -155,16 +180,20 @@ failure instead of a skip.
 
 ## References
 
+- Pytel J. [TCR-Cancer-Prediction](https://github.com/pytelj/TCR-Cancer-Prediction).
 - Pogorelyy MV, Minervina AA, Shugay M, et al. ALICE. *PLOS Biology* 2019.
-  https://doi.org/10.1371/journal.pbio.3000314
+  [doi:10.1371/journal.pbio.3000314](https://doi.org/10.1371/journal.pbio.3000314).
+- Lupyr K. [TCRgrapher](https://github.com/KseniaMIPT/tcrgrapher).
 - Nagano Y, Pyo AGT, Milighetti M, et al. SCEPTR. *Cell Systems* 2025.
-  https://doi.org/10.1016/j.cels.2024.12.006
+  [doi:10.1016/j.cels.2024.12.006](https://doi.org/10.1016/j.cels.2024.12.006).
 - Sethna Z, Elhanati Y, Callan CG Jr, et al. OLGA. *Bioinformatics* 2019.
-  https://doi.org/10.1093/bioinformatics/btz035
+  [doi:10.1093/bioinformatics/btz035](https://doi.org/10.1093/bioinformatics/btz035).
 - Shugay M, Bagaev DV, Zvyagin IV, et al. VDJdb. *Nucleic Acids Research*
-  2018. https://doi.org/10.1093/nar/gkx760
+  2018. [doi:10.1093/nar/gkx760](https://doi.org/10.1093/nar/gkx760).
 
 ## License
 
-Project-owned code is released under the MIT License. Files in `third_party/`
-retain their original licences.
+Project-owned code is released under the MIT License. The bundled TCRgrapher
+and OLGA sources retain their GPL licences, and the VDJdb snapshot retains its
+included upstream licence. The corresponding source and licence files are
+kept inside each `third_party/` directory.
