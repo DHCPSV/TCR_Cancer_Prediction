@@ -2,13 +2,13 @@
   "schema_version": 2,
   "package_type": "reproduction_cache",
   "version": "v1.0",
-  "compatible_commit": "",
+  "compatible_commit": "8f34e8c",
   "download_url": "",
   "zip_name": "TCR_Cancer_Prediction_V1_reproduction_cache.zip",
-  "zip_bytes": 0,
-  "zip_sha256": "",
-  "unpacked_bytes": 0,
+  "zip_bytes": 6953036425,
+  "zip_sha256": "00b604c2bc0c4a59f2b99d0c38a91fc850acc2e32de926bea3345ddd6065ef8d",
+  "unpacked_bytes": 8669879351,
   "contents_manifest": "artifacts/reproduction_cache_contents.json",
-  "contents_manifest_sha256": "",
-  "file_count": 0
+  "contents_manifest_sha256": "eeff5c3dd4f9de509a4b7362114067c568895a0b60e43d6b50a7f930f99051f9",
+  "file_count": 12125
 }

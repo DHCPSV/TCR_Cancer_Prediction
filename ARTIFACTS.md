@@ -13,8 +13,9 @@ Release details:
 
 - Download: pending
 - File: `TCR_Cancer_Prediction_V1_reproduction_cache.zip`
-- Size: pending rebuild
-- SHA-256: pending rebuild
+- Compressed size: 6,953,036,425 bytes (6.48 GiB)
+- Extracted size: 8,669,879,351 bytes (8.07 GiB)
+- SHA-256: `00b604c2bc0c4a59f2b99d0c38a91fc850acc2e32de926bea3345ddd6065ef8d`
 
 After downloading, extract the ZIP into the repository root and run:
 
