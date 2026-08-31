@@ -48,7 +48,9 @@ third_party/vdjdb/2026-05-16/**
 # Large scientific artifacts stay local; only the named public manifests are tracked.
 artifacts/*
 !artifacts/manifests/
+artifacts/manifests/*
 !artifacts/manifests/alice_runtime_freeze.json
+!artifacts/manifests/experiment_02_development_seed_screen.csv
 !artifacts/manifests/experiment_03_external_generalisation_freeze.json
 !artifacts/manifests/experiment_03_external_generalisation_models.csv
 !artifacts/manifests/external_representations.csv
@@ -91,6 +93,7 @@ results/**
 !results/experiment_02_seed_and_attention_normalisation/figures/selected_seed_prediction_separation.png
 !results/experiment_02_seed_and_attention_normalisation/supplementary/figures/factorization_learning_curves.png
 !results/experiment_02_seed_and_attention_normalisation/supplementary/figures/normalizer_learning_curves.png
+!results/experiment_02_seed_and_attention_normalisation/supplementary/figures/seed_panel_screen.png
 !results/experiment_02_seed_and_attention_normalisation/supplementary/figures/selected_seed_300epoch_learning_curves.png
 !results/experiment_03_external_generalisation/metrics_by_seed.csv
 !results/experiment_03_external_generalisation/metrics_summary.csv
@@ -98,12 +101,12 @@ results/**
 !results/experiment_03_external_generalisation/per_seed_pca_summary.csv
 !results/experiment_03_external_generalisation/figures/frozen_internal_external_auc.png
 !results/experiment_03_external_generalisation/figures/seed_resolved_pca_transfer_examples.png
-!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/alpha_page_1.png
-!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/alpha_page_2.png
-!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/alpha_page_3.png
-!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/beta_page_1.png
-!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/beta_page_2.png
-!results/experiment_03_external_generalisation/supplementary/per_seed_pc1_atlas/beta_page_3.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pca_atlas/alpha_page_1.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pca_atlas/alpha_page_2.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pca_atlas/alpha_page_3.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pca_atlas/beta_page_1.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pca_atlas/beta_page_2.png
+!results/experiment_03_external_generalisation/supplementary/per_seed_pca_atlas/beta_page_3.png
 !results/experiment_04_alice_model/method_manifest.csv
 !results/experiment_04_alice_model/metrics_by_seed.csv
 !results/experiment_04_alice_model/metrics_summary.csv

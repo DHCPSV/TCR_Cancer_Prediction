@@ -35,7 +35,7 @@ TRANSFER_EXAMPLES = (
 )
 
 FIGURES = study.RESULTS / "figures"
-SEED_ATLAS = study.RESULTS / "supplementary" / "per_seed_pc1_atlas"
+SEED_ATLAS = study.RESULTS / "supplementary" / "per_seed_pca_atlas"
 
 
 def load_transfer_predictions() -> pd.DataFrame:
@@ -325,18 +325,18 @@ def plot_seed_panel(
     frame: pd.DataFrame,
     internal_auc: float,
     external_auc: float,
-    x_limit: float,
-    y_limit: float,
+    pc1_variance_ratio: float,
+    pc2_variance_ratio: float,
+    axis_limit: float,
     marker_size: float,
     annotation_size: float,
 ) -> None:
-    axis.axvspan(-x_limit, 0, color="#4C78A8", alpha=0.055)
-    axis.axvspan(0, x_limit, color="#E45756", alpha=0.055)
-    axis.axvline(0, color="#333333", linestyle="--", linewidth=1.0)
+    axis.axhline(0, color="#777777", linestyle=":", linewidth=0.8)
+    axis.axvline(0, color="#777777", linestyle=":", linewidth=0.8)
     for group, (_, color, marker) in GROUP_STYLE.items():
         part = frame.loc[frame["group"] == group]
         axis.scatter(
-            part["logit"],
+            part["pc2_internal_sd"],
             part["pc1_internal_sd"],
             s=marker_size,
             c=color,
@@ -348,7 +348,8 @@ def plot_seed_panel(
     axis.text(
         0.025,
         0.975,
-        f"Internal AUC {internal_auc:.3f}\nExternal AUC {external_auc:.3f}",
+        f"Internal AUC {internal_auc:.3f} · External AUC {external_auc:.3f}\n"
+        f"PC1 {pc1_variance_ratio * 100:.1f}% · PC2 {pc2_variance_ratio * 100:.1f}%",
         transform=axis.transAxes,
         va="top",
         ha="left",
@@ -360,7 +361,11 @@ def plot_seed_panel(
             "pad": 2.0,
         },
     )
-    axis.set(xlim=(-x_limit, x_limit), ylim=(-y_limit, y_limit))
+    axis.set(
+        xlim=(-axis_limit, axis_limit),
+        ylim=(-axis_limit, axis_limit),
+    )
+    axis.set_aspect("equal", adjustable="box")
     axis.xaxis.set_major_locator(MaxNLocator(nbins=5))
     axis.yaxis.set_major_locator(MaxNLocator(nbins=5))
     axis.grid(alpha=0.16)
@@ -368,11 +373,13 @@ def plot_seed_panel(
 
 def summary_lookup(
     summary: pd.DataFrame,
-) -> dict[tuple[str, str, str], tuple[float, float]]:
+) -> dict[tuple[str, str, str], tuple[float, float, float, float]]:
     return {
         (row.model, row.chain, row.seed_id): (
             row.internal_auc,
             row.external_auc,
+            row.pc1_variance_ratio,
+            row.pc2_variance_ratio,
         )
         for row in summary.itertuples(index=False)
     }
@@ -401,7 +408,6 @@ def plot_seed_grid(
         wspace=0.25,
     )
     auc = summary_lookup(summary)
-    y_limit = seed_y_limit(points, chain)
     for row_index, seed_id in enumerate(seeds):
         seed_frame = points.loc[
             (points["chain"] == chain) & (points["seed_id"] == seed_id)
@@ -411,21 +417,31 @@ def plot_seed_grid(
         for column_index, model in enumerate(MODELS):
             axis = axes[row_index, column_index]
             part = seed_frame.loc[seed_frame["model"] == model]
-            internal_auc, external_auc = auc[(model, chain, seed_id)]
+            (
+                internal_auc,
+                external_auc,
+                pc1_variance_ratio,
+                pc2_variance_ratio,
+            ) = auc[(model, chain, seed_id)]
+            axis_limit = max(
+                panel_symmetric_limit(part, "pc1_internal_sd", 1.0),
+                panel_symmetric_limit(part, "pc2_internal_sd", 1.0),
+            )
             plot_seed_panel(
                 axis,
                 part,
                 internal_auc,
                 external_auc,
-                panel_symmetric_limit(part, "logit", 0.02),
-                y_limit,
+                pc1_variance_ratio,
+                pc2_variance_ratio,
+                axis_limit,
                 marker_size=24,
                 annotation_size=9.2,
             )
             if row_index == 0:
                 axis.set_title(model, fontsize=12)
             if row_index == len(seeds) - 1:
-                axis.set_xlabel("Exact frozen per-seed logit")
+                axis.set_xlabel("PC2 / internal SD")
             axis.set_ylabel("PC1 / internal SD" if column_index == 0 else "")
         position = axes[row_index, 0].get_position()
         figure.text(

@@ -40,6 +40,7 @@ def main(argv: list[str] | None = None) -> None:
         if args.stage in ("self-test", "all"):
             layer_seed_study.self_test()
             normalizer_study.self_test()
+            report.seed_screen_self_test()
         if args.stage in ("report", "all"):
             report.generate()
         if args.stage in ("diagnostics", "all"):
@@ -49,6 +50,7 @@ def main(argv: list[str] | None = None) -> None:
     if args.stage in ("self-test", "all"):
         layer_seed_study.self_test()
         normalizer_study.self_test()
+        report.seed_screen_self_test()
     if args.stage in ("internal", "diagnostics", "all"):
         upstream = workflow.ensure_internal()
         workflow.guard_consumer(

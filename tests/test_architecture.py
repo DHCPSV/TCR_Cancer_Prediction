@@ -13,6 +13,9 @@ from unittest.mock import patch
 import torch
 
 from analysis.experiment_01_internal_baseline import run as exp1_run
+from analysis.experiment_02_seed_and_attention_normalisation import (
+    report as exp2_report,
+)
 from analysis.experiment_02_seed_and_attention_normalisation import run as exp2_run
 from analysis.experiment_03_external_generalisation import run as exp3_run
 from analysis.experiment_04_alice_model import run as exp4_run
@@ -104,6 +107,10 @@ def test_empty_package_initializers_are_kept() -> None:
     assert all(path.stat().st_size < 512 for path in initializers)
 
 
+def test_exp2_development_seed_screen_contract() -> None:
+    exp2_report.seed_screen_self_test()
+
+
 def test_results_match_the_public_allowlist() -> None:
     allowed = {
         line[1:]
@@ -178,6 +185,9 @@ class ArchitectureTests(unittest.TestCase):
     )
     test_empty_package_initializers_are_kept = staticmethod(
         test_empty_package_initializers_are_kept
+    )
+    test_exp2_development_seed_screen_contract = staticmethod(
+        test_exp2_development_seed_screen_contract
     )
     test_results_match_the_public_allowlist = staticmethod(
         test_results_match_the_public_allowlist

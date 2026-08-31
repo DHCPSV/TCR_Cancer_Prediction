@@ -291,7 +291,7 @@ def freeze() -> dict:
         RESULTS / "figures" / "seed_resolved_pca_transfer_examples.png",
     ]
     files.extend(
-        RESULTS / "supplementary" / "per_seed_pc1_atlas" / f"{chain}_page_{page}.png"
+        RESULTS / "supplementary" / "per_seed_pca_atlas" / f"{chain}_page_{page}.png"
         for chain in CHAINS
         for page in range(1, 4)
     )

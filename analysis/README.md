@@ -28,3 +28,8 @@ Shared modules are deliberately small:
 All runners also support `self-test` and `--input-mode {raw,cached}`. Cached
 mode reads the extracted reproduction cache, accepts report stages only and
 does not prepare data or train models.
+
+Experiment 2 also reports a frozen aggregate of the 28-seed development
+screen used to choose S01--S09. Those pre-V1 runs used the same fixed
+alpha-chain SCEPTR--Sparsemax screening protocol; the default workflow trains
+the selected formal grid and does not repeat the exploratory screen.

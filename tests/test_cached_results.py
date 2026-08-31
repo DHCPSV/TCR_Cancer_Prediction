@@ -288,6 +288,14 @@ def test_freeze_contracts() -> None:
     assert exp3["fold_aggregation"] == "mean"
     assert exp3["pca_fit_split"] == "internal_oof"
     assert exp3["external_projection"] == "transform_only"
+    atlas_paths = {
+        f"results/experiment_03_external_generalisation/"
+        f"supplementary/per_seed_pca_atlas/{chain}_page_{page}.png"
+        for chain in exp3_study.CHAINS
+        for page in range(1, 4)
+    }
+    assert atlas_paths.issubset(exp3["files"])
+    assert not any("per_seed_pc1_atlas" in path for path in exp3["files"])
     exp4 = json.loads(
         (REPO / "artifacts/manifests/alice_runtime_freeze.json").read_text(
             encoding="utf-8"

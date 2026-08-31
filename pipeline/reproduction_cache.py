@@ -73,6 +73,7 @@ RUN_FILES = (
 
 MANIFEST_FILES = (
     "artifacts/manifests/alice_runtime_freeze.json",
+    "artifacts/manifests/experiment_02_development_seed_screen.csv",
     "artifacts/manifests/experiment_03_external_generalisation_freeze.json",
     "artifacts/manifests/experiment_03_external_generalisation_models.csv",
     "artifacts/manifests/external_representations.csv",

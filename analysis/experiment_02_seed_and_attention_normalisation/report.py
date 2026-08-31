@@ -24,6 +24,29 @@ EXPERIMENT_ID = seeds.EXPERIMENT_ID
 RUN_ARTIFACTS = protocol.repo_path(f"artifacts/runs/{EXPERIMENT_ID}")
 RESULTS = protocol.repo_path(f"results/{EXPERIMENT_ID}")
 SUPPLEMENTARY = RESULTS / "supplementary"
+DEVELOPMENT_SEED_SCREEN = (
+    protocol.MANIFESTS / "experiment_02_development_seed_screen.csv"
+)
+DEVELOPMENT_SEED_SCREEN_SHA256 = (
+    "1fb66a8bd890c5fe78be49164de0ded7d4d5b57445d9d45a7c3e1411c588b610"
+)
+
+SEED_SCREEN_COLUMNS = [
+    "screen_rank",
+    "seed_value",
+    "auc_mean",
+    "auc_min",
+    "auc_max",
+    "balanced_accuracy_mean",
+    "selected_seed_id",
+    "seed_group",
+    "chain",
+    "method_id",
+    "epochs",
+    "fold_count",
+    "split_seed",
+    "shuffle_seed",
+]
 
 FACTORIZATION_COLORS = {
     "S03": "#b91c1c",
@@ -32,6 +55,169 @@ FACTORIZATION_COLORS = {
     "S08": "#2563eb",
     "S09": "#64748b",
 }
+
+
+def load_development_seed_screen() -> pd.DataFrame:
+    """Read and validate the fixed-protocol screen used to choose S01--S09."""
+    if protocol.sha256(DEVELOPMENT_SEED_SCREEN) != DEVELOPMENT_SEED_SCREEN_SHA256:
+        raise ValueError("Development seed screen checksum mismatch")
+    frame = pd.read_csv(
+        DEVELOPMENT_SEED_SCREEN,
+        dtype={
+            "seed_value": str,
+            "selected_seed_id": str,
+        },
+        keep_default_na=False,
+    )
+    if list(frame.columns) != SEED_SCREEN_COLUMNS:
+        raise ValueError("Unexpected columns in the development seed screen")
+    if len(frame) != 28 or frame["seed_value"].nunique() != 28:
+        raise ValueError("The development seed screen must contain 28 unique seeds")
+    if frame["screen_rank"].tolist() != list(range(1, 29)):
+        raise ValueError("Development seed ranks must run from 1 to 28")
+    if not frame["auc_mean"].is_monotonic_decreasing:
+        raise ValueError("Development seed ranks are not ordered by mean AUC")
+
+    metrics = frame[
+        ["auc_mean", "auc_min", "auc_max", "balanced_accuracy_mean"]
+    ]
+    if metrics.isna().any().any() or not metrics.ge(0).all().all():
+        raise ValueError("Development seed metrics must be finite and non-negative")
+    if not metrics.le(1).all().all():
+        raise ValueError("Development seed metrics cannot exceed one")
+    if not (
+        frame["auc_min"].le(frame["auc_mean"])
+        & frame["auc_mean"].le(frame["auc_max"])
+    ).all():
+        raise ValueError("Mean AUC must lie within the five-fold range")
+
+    constants = {
+        "chain": "alpha",
+        "method_id": "sceptr_sparsemax",
+        "epochs": 50,
+        "fold_count": 5,
+        "split_seed": protocol.FOLD_SEED,
+        "shuffle_seed": protocol.FOLD_SEED,
+    }
+    for column, expected in constants.items():
+        if set(frame[column]) != {expected}:
+            raise ValueError(f"Unexpected {column} in the development seed screen")
+
+    expected_selected = {
+        str(protocol.SEED_REGISTRY[seed_id]["value"]): (
+            seed_id,
+            protocol.SEED_REGISTRY[seed_id]["seed_group"],
+        )
+        for seed_id in normalizers.SEED_IDS
+    }
+    selected = frame.loc[frame["selected_seed_id"] != ""]
+    if len(selected) != 9 or set(selected["seed_value"]) != set(expected_selected):
+        raise ValueError("Development screen does not identify exactly S01--S09")
+    for row in selected.itertuples(index=False):
+        seed_id, seed_group = expected_selected[row.seed_value]
+        if (row.selected_seed_id, row.seed_group) != (seed_id, seed_group):
+            raise ValueError(f"Incorrect selected-seed metadata for {row.seed_value}")
+    if (frame.loc[frame["selected_seed_id"] == "", "seed_group"] != "").any():
+        raise ValueError("Unselected development seeds must not have a seed group")
+    return frame
+
+
+def seed_screen_self_test() -> None:
+    """Check the small, tracked development-screen manifest."""
+    load_development_seed_screen()
+
+
+def plot_development_seed_screen(frame: pd.DataFrame, path: Path) -> None:
+    """Plot all 28 fixed-protocol seeds and highlight the selected panel."""
+    reporting.configure_plot()
+    figure, axis = plt.subplots(figsize=(11.2, 5.2))
+    ranks = frame["screen_rank"].to_numpy(dtype=float)
+    axis.vlines(
+        ranks,
+        frame["auc_min"],
+        frame["auc_max"],
+        color="#94a3b8",
+        linewidth=1.5,
+        alpha=0.72,
+        zorder=1,
+    )
+    axis.scatter(
+        ranks,
+        frame["auc_mean"],
+        color="#64748b",
+        edgecolor="white",
+        linewidth=0.7,
+        s=47,
+        zorder=2,
+    )
+
+    group_handles = []
+    for group in ("lucky", "moderate", "ordinary"):
+        rows = frame.loc[frame["seed_group"] == group]
+        label = seed_display.label(group)
+        color = seed_display.GROUP_COLORS[label]
+        axis.scatter(
+            rows["screen_rank"],
+            rows["auc_mean"],
+            color=color,
+            edgecolor="white",
+            linewidth=0.9,
+            s=84,
+            zorder=3,
+        )
+        for row in rows.itertuples(index=False):
+            axis.annotate(
+                row.selected_seed_id,
+                (row.screen_rank, row.auc_max),
+                xytext=(0, 6),
+                textcoords="offset points",
+                ha="center",
+                va="bottom",
+                color=color,
+                fontsize=9,
+                fontweight="bold",
+            )
+        group_handles.append(
+            Line2D(
+                [0],
+                [0],
+                marker="o",
+                linestyle="",
+                markersize=8,
+                markerfacecolor=color,
+                markeredgecolor="white",
+                label=f"Selected: {label}",
+            )
+        )
+
+    axis.axhline(0.5, color="#94a3b8", linestyle=":", linewidth=1.2)
+    axis.set(
+        xlabel="Rank by mean held-out-fold AUC",
+        ylabel="Mean held-out-fold AUC (range across 5 folds)",
+        xlim=(0.2, 28.8),
+        ylim=(0.30, 1.075),
+        xticks=[1, 5, 10, 15, 20, 25, 28],
+        title="Fixed-protocol alpha-chain seed screen",
+    )
+    axis.grid(axis="y", alpha=0.18)
+    handles = [
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            linestyle="",
+            markersize=7,
+            markerfacecolor="#64748b",
+            markeredgecolor="white",
+            label="Other candidate",
+        ),
+        *group_handles,
+    ]
+    axis.legend(handles=handles, loc="lower left", frameon=False, ncol=2)
+    figure.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, bbox_inches="tight", dpi=300)
+    plt.close(figure)
 
 
 def numbered_seed_group_label(
@@ -854,3 +1040,7 @@ def generate() -> None:
     """Generate the Experiment 02 tables and figures."""
     factorization_report()
     normalizer_report()
+    plot_development_seed_screen(
+        load_development_seed_screen(),
+        SUPPLEMENTARY / "figures" / "seed_panel_screen.png",
+    )
