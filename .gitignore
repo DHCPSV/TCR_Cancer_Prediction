@@ -32,6 +32,7 @@ data/**
 backup/
 temp/
 tmp/
+/output/
 external_documents/
 /PROJECT_*.md
 .agents/
