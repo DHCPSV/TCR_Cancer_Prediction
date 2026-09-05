@@ -1000,32 +1000,45 @@ def plot_selected_seed_diagnostics(
     plt.close(figure)
 
 
+def plot_weight_trajectory(weights: pd.DataFrame, layer: str, path: Path) -> None:
+    """Show five-fold mean weights at the eight saved training milestones."""
+    reporting.configure_plot()
+    frame = weights.loc[weights["layer"] == layer]
+    # Each layer has its own symmetric scale; the outer 2% saturate in colour.
+    limit = max(float(np.quantile(np.abs(frame["weight"].to_numpy(dtype=float)), 0.98)), 1e-8)
+    figure, axes = plt.subplots(len(seeds.TRAJECTORY_SEEDS), 1, figsize=(13.6, 8.6), sharex=True)
+    for axis, seed_id in zip(axes, seeds.TRAJECTORY_SEEDS):
+        matrix = frame.loc[frame["seed_id"] == seed_id].pivot(
+            index="checkpoint_epoch", columns="dimension", values="weight",
+        ).loc[list(seeds.CHECKPOINT_EPOCHS), list(range(64))]
+        image = axis.imshow(matrix, aspect="auto", cmap="coolwarm", vmin=-limit, vmax=limit)
+        axis.set_yticks(range(len(seeds.CHECKPOINT_EPOCHS)), seeds.CHECKPOINT_EPOCHS)
+        axis.set_ylabel("Epoch")
+        axis.set_title(numbered_seed_group_label(seed_id, seeds.TRAJECTORY_SEEDS),
+                       loc="left", fontsize=11, pad=5)
+    axes[-1].set_xticks(range(0, 64, 4), range(0, 64, 4))
+    axes[-1].set_xlabel("SCEPTR coordinate")
+    color_axis = figure.add_axes([0.925, 0.20, 0.016, 0.58])
+    figure.colorbar(image, cax=color_axis, label="Five-fold mean weight")
+    figure.subplots_adjust(left=0.08, right=0.90, bottom=0.10, top=0.97, hspace=0.46)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".png.tmp")
+    try:
+        figure.savefig(temporary, format="png", bbox_inches="tight")
+        temporary.replace(path)
+    finally:
+        plt.close(figure)
+
+
+def weight_trajectory_report() -> None:
+    weights = seeds.trajectory_weights()
+    for layer in ("attention", "classifier"):
+        plot_weight_trajectory(weights, layer, RESULTS / "figures" / f"{layer}_weight_trajectory.png")
+
+
 def diagnostics() -> None:
-    """Report the optional 300-epoch AUC/BCE diagnostic, without parameters."""
-    fold_metrics = pd.read_csv(
-        RUN_ARTIFACTS / "trajectory_fold_metrics.csv",
-        dtype={"seed_value": str},
-    )
-    predictions = pd.read_csv(
-        RUN_ARTIFACTS / "trajectory_oof.csv",
-        dtype={"seed_value": str},
-    )
-    expected_seeds = set(seeds.TRAJECTORY_SEEDS)
-    expected_epochs = set(seeds.CHECKPOINT_EPOCHS)
-    if set(fold_metrics["seed_id"]) != expected_seeds:
-        raise ValueError("300-epoch diagnostic fold metrics have the wrong seed IDs")
-    if set(predictions["seed_id"]) != expected_seeds:
-        raise ValueError("300-epoch diagnostic predictions have the wrong seed IDs")
-    if set(fold_metrics["checkpoint_epoch"].astype(int)) != expected_epochs:
-        raise ValueError("300-epoch diagnostic fold metrics have the wrong checkpoints")
-    if set(predictions["checkpoint_epoch"].astype(int)) != expected_epochs:
-        raise ValueError("300-epoch diagnostic predictions have the wrong checkpoints")
-    if fold_metrics.duplicated(["seed_id", "fold", "checkpoint_epoch"]).any():
-        raise ValueError("Duplicate fold metric in 300-epoch diagnostic")
-    if predictions.duplicated(
-        ["seed_id", "checkpoint_epoch", "subject_id"]
-    ).any():
-        raise ValueError("Duplicate patient prediction in 300-epoch diagnostic")
+    """Report the optional AUC/BCE curves from the selected-seed trajectories."""
+    fold_metrics, predictions = seeds.load_trajectory_results()
 
     pooled_metrics = milestone_metrics(predictions)
     figures = SUPPLEMENTARY / "figures"
@@ -1039,6 +1052,7 @@ def diagnostics() -> None:
 def generate() -> None:
     """Generate the Experiment 02 tables and figures."""
     factorization_report()
+    weight_trajectory_report()
     normalizer_report()
     plot_development_seed_screen(
         load_development_seed_screen(),

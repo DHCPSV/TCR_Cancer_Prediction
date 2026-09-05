@@ -38,6 +38,11 @@ Experiments 1 and 2 use internal data only. Experiment 3 reuses the frozen
 Experiment 2 checkpoints. Experiment 4 prepares ALICE evidence before fitting
 its patient-level classifiers.
 
+Experiment 2 also includes 0--300 epoch weight trajectories for three selected
+alpha-chain seeds. They are generated in the same run; the main performance
+comparisons still use 50 epochs. See [analysis/README.md](analysis/README.md)
+for the stages and figure definitions.
+
 ### Use the published reproduction cache
 
 The optional reproduction cache contains the prepared patient TCR tables,

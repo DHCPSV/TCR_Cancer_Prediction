@@ -1,4 +1,4 @@
-"""Layer-seed comparison and the optional 300-epoch diagnostic."""
+"""Layer-seed factorisation and selected-seed training trajectories."""
 
 from __future__ import annotations
 
@@ -416,6 +416,80 @@ def load_trajectory_checkpoint(path: Path, seed_id: str, fold: int, epoch: int, 
     return model
 
 
+def trajectory_weights() -> pd.DataFrame:
+    """Read raw layer weights and average the five folds at each saved epoch."""
+    rows = []
+    for seed_id in TRAJECTORY_SEEDS:
+        for epoch in CHECKPOINT_EPOCHS:
+            fold_weights = {"attention": [], "classifier": []}
+            for fold in FOLDS:
+                model = load_trajectory_checkpoint(
+                    trajectory_checkpoint(seed_id, fold, epoch),
+                    seed_id, fold, epoch, torch.device("cpu"),
+                )
+                for layer, module in (
+                    ("attention", model.attention_score),
+                    ("classifier", model.classifier),
+                ):
+                    values = module.weight.detach().cpu().numpy().reshape(-1).astype(float)
+                    if values.shape != (64,) or not np.isfinite(values).all():
+                        raise ValueError(f"{seed_id}, fold {fold}, epoch {epoch}: invalid {layer} weights")
+                    fold_weights[layer].append(values)
+            for layer, values in fold_weights.items():
+                for dimension, weight in enumerate(np.mean(values, axis=0)):
+                    rows.append({
+                        "seed_id": seed_id,
+                        "checkpoint_epoch": epoch,
+                        "layer": layer,
+                        "dimension": dimension,
+                        "weight": float(weight),
+                    })
+    return pd.DataFrame(rows)
+
+
+def validate_trajectory_results(fold_metrics: pd.DataFrame, predictions: pd.DataFrame) -> None:
+    """Require the same patients, folds and saved epochs throughout the study."""
+    metric_key = ["seed_id", "fold", "checkpoint_epoch"]
+    expected = {
+        (seed_id, fold, epoch)
+        for seed_id in TRAJECTORY_SEEDS for fold in FOLDS for epoch in CHECKPOINT_EPOCHS
+    }
+    if fold_metrics.duplicated(metric_key).any() or set(
+        fold_metrics[metric_key].itertuples(index=False, name=None)
+    ) != expected:
+        raise ValueError("Selected-seed trajectory metrics have incomplete or duplicate checkpoints")
+    prediction_key = ["seed_id", "checkpoint_epoch", "subject_id"]
+    counts = predictions.groupby(["seed_id", "checkpoint_epoch"]).size()
+    expected_groups = {(seed_id, epoch) for seed_id in TRAJECTORY_SEEDS for epoch in CHECKPOINT_EPOCHS}
+    if (
+        predictions.duplicated(prediction_key).any()
+        or set(counts.index) != expected_groups
+        or not counts.eq(169).all()
+        or predictions["subject_id"].nunique() != 169
+        or set(predictions["fold"]) != set(FOLDS)
+        or set(predictions["split"]) != {"internal_oof"}
+        or not predictions.groupby("subject_id")[["fold", "cohort", "label"]].nunique().eq(1).all().all()
+    ):
+        raise ValueError("Selected-seed trajectory predictions have inconsistent patient/fold coverage")
+    for frame in (fold_metrics, predictions):
+        expected_values = frame["seed_id"].map(lambda seed_id: str(seed_value(seed_id)))
+        if not frame["seed_value"].astype(str).eq(expected_values).all():
+            raise ValueError("Selected-seed trajectory seed values do not match the registry")
+    metric_columns = ["train_auc", "test_auc", "train_balanced_bce", "test_balanced_bce",
+                      "train_balanced_accuracy", "test_balanced_accuracy"]
+    if not np.isfinite(fold_metrics[metric_columns].to_numpy(dtype=float)).all():
+        raise ValueError("Selected-seed trajectory metrics contain non-finite values")
+    if not predictions["score"].between(0, 1).all() or set(predictions["label"]) != {0, 1}:
+        raise ValueError("Selected-seed trajectory predictions have invalid scores or labels")
+
+
+def load_trajectory_results() -> tuple[pd.DataFrame, pd.DataFrame]:
+    fold_metrics = pd.read_csv(RUN_ARTIFACTS / "trajectory_fold_metrics.csv", dtype={"seed_value": str})
+    predictions = pd.read_csv(RUN_ARTIFACTS / "trajectory_oof.csv", dtype={"seed_value": str})
+    validate_trajectory_results(fold_metrics, predictions)
+    return fold_metrics, predictions
+
+
 def record_trajectory_state(
     model: AttentionMIL,
     seed_id: str,
@@ -517,8 +591,17 @@ def train_trajectory_fold(
     return metric_rows, prediction_rows
 
 
-def diagnostics(device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Run the optional selected-seed 300-epoch learning diagnostic."""
+def trajectories(device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Reuse or train the selected-seed snapshots for weights and learning curves."""
+    paths = [
+        trajectory_checkpoint(seed_id, fold, epoch)
+        for seed_id in TRAJECTORY_SEEDS for fold in FOLDS for epoch in CHECKPOINT_EPOCHS
+    ]
+    paths += [RUN_ARTIFACTS / "trajectory_fold_metrics.csv", RUN_ARTIFACTS / "trajectory_oof.csv"]
+    if all(path.exists() for path in paths):
+        result = load_trajectory_results()
+        trajectory_weights()  # Strict-load every snapshot before reusing the complete study.
+        return result
     frame = internal_rows("alpha")
     records = frame.to_dict("records")
     tensors = protocol.load_tensors(frame, device)
@@ -526,7 +609,7 @@ def diagnostics(device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
     all_predictions = []
     total = len(TRAJECTORY_SEEDS) * len(FOLDS)
     progress = provenance.Progress(
-        "Experiment 02 selected-seed 300-epoch diagnostic",
+        "Experiment 02 selected-seed training trajectories",
         total,
         updates=5,
     )
@@ -553,24 +636,7 @@ def diagnostics(device: torch.device) -> tuple[pd.DataFrame, pd.DataFrame]:
             progress.advance()
     fold_metrics = pd.DataFrame(all_metrics)
     predictions = pd.DataFrame(all_predictions)
-    expected_metric_rows = len(TRAJECTORY_SEEDS) * len(FOLDS) * len(CHECKPOINT_EPOCHS)
-    expected_prediction_rows = len(TRAJECTORY_SEEDS) * len(CHECKPOINT_EPOCHS) * 169
-    if len(fold_metrics) != expected_metric_rows:
-        raise ValueError(
-            f"300-epoch diagnostic produced {len(fold_metrics)} metric rows; "
-            f"expected {expected_metric_rows}"
-        )
-    if len(predictions) != expected_prediction_rows:
-        raise ValueError(
-            f"300-epoch diagnostic produced {len(predictions)} predictions; "
-            f"expected {expected_prediction_rows}"
-        )
-    metric_key = ["seed_id", "fold", "checkpoint_epoch"]
-    prediction_key = ["seed_id", "checkpoint_epoch", "subject_id"]
-    if fold_metrics.duplicated(metric_key).any():
-        raise ValueError("Duplicate fold metric in 300-epoch diagnostic")
-    if predictions.duplicated(prediction_key).any():
-        raise ValueError("Duplicate patient prediction in 300-epoch diagnostic")
+    validate_trajectory_results(fold_metrics, predictions)
     protocol.atomic_csv(fold_metrics, RUN_ARTIFACTS / "trajectory_fold_metrics.csv")
     protocol.atomic_csv(predictions, RUN_ARTIFACTS / "trajectory_oof.csv")
     progress.summary(
@@ -624,5 +690,7 @@ def self_test() -> None:
 
 
 def internal(device: torch.device) -> pd.DataFrame:
-    """Run the 50-epoch attention/classifier factorisation."""
-    return factorization_internal(device)
+    """Run the 50-epoch factorisation and the selected-seed trajectory study."""
+    result = factorization_internal(device)
+    trajectories(device)
+    return result

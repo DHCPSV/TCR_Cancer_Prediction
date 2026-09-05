@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> None:
         normalizer_study.internal(device)
     if args.stage == "diagnostics":
         device = training.device_from(args.device)
-        layer_seed_study.diagnostics(device)
+        layer_seed_study.trajectories(device)
         report.diagnostics()
     if args.stage in ("report", "all"):
         report.generate()
