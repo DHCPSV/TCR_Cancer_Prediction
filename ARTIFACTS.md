@@ -12,7 +12,7 @@ download is needed. It supports two uses:
 
 ## Release details
 
-- Download: awaiting upload of the raw-inclusive 2026-09-05 package.
+- Download: https://1drv.ms/u/c/c2c6d65a2073ac72/IQAEVFanW9TGQo2kYDN06_rTATWyG13lQwjCexb4kcsa0h8?e=ZKonUU
 - File: `TCR_Cancer_Prediction_V1_reproduction_cache.zip`
 - Compatible code: the raw-inclusive cache update; exact cache-code hashes are
   recorded in [the release manifest](artifacts/reproduction_cache_release.json).
