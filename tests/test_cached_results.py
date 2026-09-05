@@ -108,7 +108,10 @@ def test_cache_contains_reusable_pipeline_inputs() -> None:
     for root in reproduction_cache.REUSABLE_INPUT_DIRS:
         prefix = root.rstrip("/") + "/"
         assert any(path.startswith(prefix) for path in selected), root
-    assert not any(path.startswith("data/raw/") for path in selected)
+    raw_hashes = reproduction_cache.raw_file_hashes()
+    assert {path for path in selected if path.startswith("data/raw/")} == set(raw_hashes)
+    for name, expected in raw_hashes.items():
+        assert protocol.sha256(REPO / name) == expected
     assert not any(path.startswith("results/") for path in selected)
 
 

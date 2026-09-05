@@ -16,6 +16,11 @@ and the derived row count. The lookup verifies the derived table before
 reading it. The release archive and full tables remain available upstream and
 are not required to reproduce this lookup.
 
+The [full reproduction cache](../../ARTIFACTS.md) supplies the patient-family
+tables used as lookup inputs. Experiment 4's `--input-mode cached --stage all`
+repeats the lookup and generates its reports using those tables and the fixed
+snapshot here; no additional VDJdb download is needed.
+
 Changing the snapshot requires updating the release constant in
 `analysis/experiment_04_alice_model/vdjdb_lookup.py` and the corresponding
 provenance row in `source.csv` together.

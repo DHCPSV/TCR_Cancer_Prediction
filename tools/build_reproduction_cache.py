@@ -61,8 +61,16 @@ def main(argv: list[str] | None = None) -> None:
     release = {
         "schema_version": 2,
         "package_type": "reproduction_cache",
+        "includes_raw_data": True,
         "version": args.version,
         "compatible_commit": args.commit,
+        "cache_code_sha256": {
+            name: protocol.sha256(protocol.REPO / name)
+            for name in (
+                "pipeline/reproduction_cache.py",
+                "tools/build_reproduction_cache.py",
+            )
+        },
         "download_url": "",
         "zip_name": output.name,
         "zip_bytes": output.stat().st_size,

@@ -18,16 +18,34 @@ Shared modules are deliberately small:
 
 ## Stages
 
-| Experiment | Main stages | Optional stage |
+| Experiment | Raw-mode stages | Separate raw-mode stage |
 |---|---|---|
 | 1 | `internal`, `report`, `all` | `diagnostics` |
 | 2 | `internal`, `report`, `all` | `diagnostics` |
 | 3 | `prepare`, `report`, `pca`, `freeze`, `all` | — |
 | 4 | `internal`, `validation`, `report`, `all` | `future-work` |
 
-All runners also support `self-test` and `--input-mode {raw,cached}`. Cached
-mode reads the extracted reproduction cache, accepts report stages only and
-does not prepare data or train models.
+All runners also support `self-test` and `--input-mode {raw,cached}`. Both
+`--input-mode raw` and `--stage all` are defaults. In raw mode, `all` runs the
+main stages; the separate stages above must be requested explicitly.
+
+For quick reproduction, extract and verify the
+[full cache](../ARTIFACTS.md), then use `--input-mode cached --stage all`.
+The package includes raw repertoires, embeddings and ALICE intermediate files,
+but cached mode reads only the stored report inputs and checkpoints. It does
+not prepare data, compute embeddings, run ALICE or train models.
+
+| Experiment | Stages included in cached `all` |
+|---|---|
+| 1 | `self-test`, `report`, `diagnostics` |
+| 2 | `self-test`, `report`, `diagnostics` |
+| 3 | `self-test`, `report`, `pca` |
+| 4 | `self-test`, `report`, `future-work` |
+
+Each listed cached stage can also run on its own. Other stages are rejected
+in cached mode; use raw mode for preparation, training or freezing. Reports
+write to `results/experiment_*/`; cached `all` includes the Appendix figures
+and the existing Future Work results, without extending the experiments.
 
 Experiment 2 `internal` trains the 50-epoch layer-seed and normaliser
 comparisons, plus trajectories for three selected alpha-chain SCEPTR--Sparsemax
@@ -35,7 +53,7 @@ seeds (S01--S03). The trajectories save epochs 0, 5, 10, 25, 50, 100, 200 and
 300. `layer_seed_study.py` reads these checkpoints; `report.py` produces
 `attention_weight_trajectory.png` and `classifier_weight_trajectory.png` in
 the main `figures/` directory. Both figures are included in `report` and `all`.
-The published cache already contains all 120 trajectory checkpoints.
+The full cache contains all 120 trajectory checkpoints.
 
 Each heatmap shows raw weights averaged across five folds, not biological
 feature importance. Each layer uses a separate symmetric colour scale at

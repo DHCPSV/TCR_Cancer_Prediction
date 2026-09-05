@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from analysis import protocol
 
@@ -99,9 +100,39 @@ MANIFEST_FILES = (
 PACKAGE_DIRS = CHECKPOINT_DIRS + HISTORY_DIRS + REUSABLE_INPUT_DIRS
 
 
+def raw_file_hashes(repo: Path = protocol.REPO) -> dict[str, str]:
+    """Select the source repertoires named in the completed sample manifest."""
+    raw_root = (repo / "data/raw").resolve()
+    hashes: dict[str, str] = {}
+    with (repo / "artifacts/manifests/samples.csv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        for row in csv.DictReader(handle):
+            name, expected = row["raw_file"], row["raw_sha256"]
+            relative = PurePosixPath(name)
+            if (
+                relative.is_absolute()
+                or ".." in relative.parts
+                or "\\" in name
+                or not name.startswith("data/raw/")
+                or not name.endswith((".tsv", ".tsv.gz"))
+                or not (repo / name).resolve().is_relative_to(raw_root)
+            ):
+                raise ValueError(f"Invalid raw repertoire path: {name}")
+            if len(expected) != 64 or any(c not in "0123456789abcdef" for c in expected):
+                raise ValueError(f"Missing or invalid raw checksum: {name}")
+            if name in hashes and hashes[name] != expected:
+                raise ValueError(f"Conflicting raw checksums: {name}")
+            hashes[name] = expected
+    if not hashes:
+        raise ValueError("The sample manifest contains no raw repertoires")
+    return hashes
+
+
 def selected_files(repo: Path = protocol.REPO) -> list[Path]:
     """Return the exact files included in the reproduction cache."""
     files = [repo / name for name in RUN_FILES + MANIFEST_FILES]
+    files.extend(repo / name for name in raw_file_hashes(repo))
     for name in PACKAGE_DIRS:
         root = repo / name
         if not root.is_dir():
@@ -136,6 +167,10 @@ def write_contents_manifest(
         "package_type": "reproduction_cache",
         "files": [file_record(path, repo) for path in files],
     }
+    recorded_hashes = {item["path"]: item["sha256"] for item in payload["files"]}
+    for name, expected in raw_file_hashes(repo).items():
+        if recorded_hashes.get(name) != expected:
+            raise ValueError(f"Raw repertoire does not match the sample manifest: {name}")
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(f"{target.suffix}.tmp")
     temporary.write_text(
@@ -173,6 +208,7 @@ def verify(
 ) -> dict:
     """Verify the extracted cache against its allowlist and contents manifest."""
     manifest, _, records = _manifest(repo)
+    raw_hashes = raw_file_hashes(repo)
     expected = {path.relative_to(repo).as_posix() for path in selected_files(repo)}
     recorded = {record.get("path") for record in records}
     if recorded != expected:
@@ -188,6 +224,8 @@ def verify(
             + "; ".join(details)
         )
     for record in records:
+        if record["path"] in raw_hashes and record["sha256"] != raw_hashes[record["path"]]:
+            raise ValueError(f"Raw checksum differs from sample manifest: {record['path']}")
         path = repo / record["path"]
         if not path.is_file():
             raise FileNotFoundError(f"Reproduction-cache file is missing: {record['path']}")

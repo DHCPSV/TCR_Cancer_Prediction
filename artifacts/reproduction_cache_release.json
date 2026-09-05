@@ -1,14 +1,19 @@
 {
   "schema_version": 2,
   "package_type": "reproduction_cache",
+  "includes_raw_data": true,
   "version": "v1.0",
-  "compatible_commit": "0301bce",
+  "compatible_commit": "",
+  "cache_code_sha256": {
+    "pipeline/reproduction_cache.py": "570aba34d7bc9538c322e61c15490f5b8dcbb470a76561c0cba04228f8257846",
+    "tools/build_reproduction_cache.py": "70e0df0b6322249ee483cb93d3d2adb20c47a5bf3ef3d1bf023bbc40c211d4b0"
+  },
   "download_url": "",
   "zip_name": "TCR_Cancer_Prediction_V1_reproduction_cache.zip",
-  "zip_bytes": 6953036402,
-  "zip_sha256": "57aa08d04d856f94055a18c82f36ebd7fb5b13d98fcf4f273a19e5877bbf784d",
-  "unpacked_bytes": 8669878235,
+  "zip_bytes": 8379845059,
+  "zip_sha256": "49832c22759e04a192ade4f3108e21b3514a2c9ade2c8c3c9dd720dbd249c06f",
+  "unpacked_bytes": 14450032167,
   "contents_manifest": "artifacts/reproduction_cache_contents.json",
-  "contents_manifest_sha256": "8cfa7ba26fd8cb80849b9279711127e38b0449100f0b7a45287e3e277783d487",
-  "file_count": 12125
+  "contents_manifest_sha256": "e41ea75b0b2f774f2598cee344ea2ac05b7f1e2854ecddded752bd9552f7286a",
+  "file_count": 12569
 }

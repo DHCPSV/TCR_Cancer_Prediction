@@ -3,6 +3,12 @@
 This directory is the complete, isolated third-party boundary for ALICE.
 Project training code reads only derived files under `artifacts/alice/`.
 
+The [full reproduction cache](../../ARTIFACTS.md) supplies the ALICE inputs,
+outputs, evidence and sequence maps as well as the raw repertoires. Experiment
+4 with `--input-mode cached --stage all` rebuilds the reports without running
+the R worker or OLGA. The installation steps below are needed when generating
+ALICE evidence in raw mode; only matching cached stages can be reused.
+
 Pinned sources:
 
 - TCRgrapher `First_release`, commit

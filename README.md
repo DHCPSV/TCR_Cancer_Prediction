@@ -20,18 +20,66 @@ raw AIRR tables -> patient TCR tables -> TCR embeddings
 ## Two ways to run the project
 
 Every experiment runner supports `--input-mode raw` and
-`--input-mode cached`. The default is `raw`.
+`--input-mode cached`. The default is `raw`; use `cached` explicitly for
+quick report reproduction. Set up the Python environment below before using
+either workflow.
+
+### Full reproduction cache (recommended)
+
+The full cache contains the original raw repertoires, prepared patient TCR
+tables, TCR representations (including SCEPTR embeddings), ALICE inputs and
+outputs, checkpoints, training histories, patient-level predictions and
+intermediate report tables. It supplies both `data/raw/` and `artifacts/`.
+The code and Python environment are installed separately; generated `results/`
+are not part of the ZIP.
+
+1. Check the download status, compatible code, file size and SHA-256 in
+   [ARTIFACTS.md](ARTIFACTS.md). Older packages share the same filename, so
+   verify the checksum before extracting.
+2. Extract into a fresh checkout of the matching repository version without
+   changing the ZIP's directory layout. From the repository root in PowerShell:
+
+   ```powershell
+   Expand-Archive -LiteralPath .\TCR_Cancer_Prediction_V1_reproduction_cache.zip -DestinationPath . -Force
+   ```
+
+   `-Force` replaces files at matching paths. Use a separate checkout if you
+   need to keep existing local data or model outputs.
+
+3. Verify the extracted files and checkpoints:
+
+   ```powershell
+   python -m pipeline.verify_reproduction_cache
+   ```
+
+4. Rebuild each experiment's reports, including Appendix diagnostics and
+   the existing Future Work outputs:
+
+   ```powershell
+   python -m analysis.experiment_01_internal_baseline.run --input-mode cached --stage all
+   python -m analysis.experiment_02_seed_and_attention_normalisation.run --input-mode cached --stage all
+   python -m analysis.experiment_03_external_generalisation.run --input-mode cached --stage all
+   python -m analysis.experiment_04_alice_model.run --input-mode cached --stage all
+   ```
+
+The CSV files and PNG figures are written under `results/experiment_*/`.
+Cached mode uses stored predictions and other report inputs. It does not
+prepare raw data, regenerate embeddings, run ALICE or train models. Training
+and preparation stages are rejected in this mode, even though their inputs
+are included in the full package.
 
 ### Full run from raw data
 
 This path performs preparation, embedding, training, validation and report
-generation. Run the experiments in order:
+generation, reusing compatible cached files when available. The full ZIP
+already supplies the raw inputs; without it, follow [data/README.md](data/README.md).
+Run the experiments in order:
 
 ```powershell
-python -m analysis.experiment_01_internal_baseline.run --input-mode raw
-python -m analysis.experiment_02_seed_and_attention_normalisation.run --input-mode raw
-python -m analysis.experiment_03_external_generalisation.run --input-mode raw
-python -m analysis.experiment_04_alice_model.run --input-mode raw
+python -m analysis.experiment_01_internal_baseline.run --input-mode raw --stage all
+python -m analysis.experiment_02_seed_and_attention_normalisation.run --input-mode raw --stage all
+python -m analysis.experiment_03_external_generalisation.run --input-mode raw --stage all
+python -m analysis.experiment_04_alice_model.run --input-mode raw --stage all
 ```
 
 Experiments 1 and 2 use internal data only. Experiment 3 reuses the frozen
@@ -40,48 +88,14 @@ its patient-level classifiers.
 
 Experiment 2 also includes 0--300 epoch weight trajectories for three selected
 alpha-chain seeds. They are generated in the same run; the main performance
-comparisons still use 50 epochs. See [analysis/README.md](analysis/README.md)
-for the stages and figure definitions.
+comparisons still use 50 epochs. In raw mode, the Experiment 1/2 `diagnostics`
+and Experiment 4 `future-work` stages run separately from `all`. See
+[analysis/README.md](analysis/README.md) for the stage map.
 
-### Use the published reproduction cache
-
-The optional reproduction cache contains the prepared patient TCR tables,
-TCR representations, ALICE inputs and outputs, provenance records,
-checkpoints, training histories, patient-level predictions and the
-intermediate tables used by the reports. Raw repertoires and generated
-`results/` are not included.
-
-1. Download the ZIP listed in [ARTIFACTS.md](ARTIFACTS.md).
-2. Extract it into the repository root without changing its directory layout.
-   On Windows PowerShell, run this command from the repository root:
-
-```powershell
-Expand-Archive -LiteralPath .\TCR_Cancer_Prediction_V1_reproduction_cache.zip -DestinationPath . -Force
-```
-
-3. Verify it:
-
-```powershell
-python -m pipeline.verify_reproduction_cache
-```
-
-4. Rebuild the reports:
-
-```powershell
-python -m analysis.experiment_01_internal_baseline.run --input-mode cached
-python -m analysis.experiment_02_seed_and_attention_normalisation.run --input-mode cached
-python -m analysis.experiment_03_external_generalisation.run --input-mode cached
-python -m analysis.experiment_04_alice_model.run --input-mode cached
-```
-
-Cached mode uses the stored predictions and other report inputs. It never
-prepares raw data or trains models, and training stages such as `internal`,
-`prepare` and `validation` are rejected.
-
-The same extracted cache also supports the raw workflow. When the matching raw
-repertoires are present under `data/raw/`, provenance checks reuse unchanged
-patient TCR tables, representations and ALICE intermediate files instead of
-recomputing them. Existing compatible checkpoints are reused as well.
+Some prepared tables in this release record an earlier preprocessing-code
+hash. Raw mode rebuilds affected tables and may invalidate downstream caches;
+it is not a guaranteed shortcut around preprocessing or training. Use
+`cached --stage all` to reproduce the stored results without these rebuilds.
 
 ## Environment
 
@@ -97,7 +111,8 @@ python -m pip install -r requirements-cuda.txt
 python -m pip install -e . --no-deps
 ```
 
-Install the ALICE R dependencies and the included TCRgrapher source:
+For the raw ALICE workflow, also install the R dependencies and the included
+TCRgrapher source. Cached reports do not run R:
 
 ```powershell
 $rscript = 'C:\Program Files\R\R-4.3.3\bin\Rscript.exe'
@@ -111,8 +126,9 @@ Use `--rscript` if R is installed elsewhere.
 
 ## Raw data
 
-Raw repertoires are not included in Git or in the reproduction cache. Place
-approved inputs under:
+Raw repertoires are excluded from Git but included in the separate reproduction
+cache. Extracting that ZIP supplies the inputs under the following paths. If
+you do not use the ZIP, place the approved inputs here yourself:
 
 ```text
 data/raw/
@@ -135,7 +151,7 @@ pipeline/       manifest building, data preparation, embeddings and cache checks
 tests/          portable tests and optional cached-result checks
 results/        aggregate CSV files and publication figures
 third_party/    pinned ALICE/OLGA code and the derived VDJdb snapshot
-tools/          release utility for building the optional reproduction cache
+tools/          release utility for building the full reproduction cache
 ```
 
 Inside each experiment, `methods.py` contains the model definitions,
