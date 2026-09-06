@@ -1,4 +1,5 @@
-# Identifying a T cell receptor sequence signal in the blood of individuals with lung cancer
+# Identifying T Cell Receptor Sequence Signals in the Blood of Individuals With Lung Cancer
+
 
 This repository contains four patient-level cancer-classification experiments
 using T-cell receptor (TCR) repertoires.
