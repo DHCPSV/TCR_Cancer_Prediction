@@ -83,17 +83,3 @@ Subject IDs and complete CDR3 sequences are retained because the source
 datasets permit their public scientific use and they are not direct personal
 identifiers. Dataset and third-party licence terms still apply; the project's
 MIT licence does not replace them.
-
-## Verification and raw-mode limitation
-
-The 2026-09-05 package was extracted into a separate checkout and checked with
-Python 3.12.10. All four cached workflows completed: the 28 PNG figures and
-22 CSV files matched the repository results byte for byte, and all 38
-unit/cached-result tests passed. No model retraining was performed.
-
-Use `cached` mode for quick report reproduction. Some bundled TCR-table
-provenance records refer to an earlier preprocessing-code hash. An additional
-raw preparation check completed but rebuilt all 169 internal alpha tables,
-so automatic reuse of the entire raw pipeline is not established. Raw mode
-may rebuild affected tables and invalidate downstream caches. The package
-retains the original cache bytes and provenance records unchanged.
